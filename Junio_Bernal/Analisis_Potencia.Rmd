@@ -1,0 +1,138 @@
+---
+title: "Tanque_Analisis_de_Potencia"
+output: html_document
+date: "2023-07-03"
+---
+
+```{r setup, include=FALSE, echo=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(readr)
+library(dplyr)
+library(here)
+library(ggplot2)
+library(plotrix)
+library(segmented)
+library(Routliers)
+library(tidyverse)
+library(ggpubr)
+library(car)
+library(data.table)
+```
+
+## Modelo con Regresion Logística
+
+## Carga de Datos
+```{r Carga Datos}
+dir_1k <- "./Data_1k"
+data_1k <- 
+    list.files(path=dir_1k, pattern = "*.csv",full.names = TRUE) %>% 
+    map_df(~fread(.) %>% mutate(trial_Order = row_number())) %>%
+    mutate(Frec = "1k")
+
+dir_4k <- "./Data_4k"
+data_4k <- 
+    list.files(path=dir_4k, pattern = "*.csv",full.names = TRUE) %>% 
+    map_df(~fread(.)%>% mutate(trial_Order = row_number())) %>%
+    mutate(Frec = "4k")
+
+data <- rbind(data_1k, data_4k)
+rm(dir_1k,dir_4k)
+```
+## Paso a log log y labeleo
+
+```{r, echo=FALSE}
+data$condicion[data$condicion==0] <- "WW"
+data$condicion[data$condicion==1] <- "LL"
+data$condicion[data$condicion==2] <- "HH"
+data$distancia <- log(data$distancia) 
+data$respuesta <- log(data$respuesta)
+```
+##  Busco Outliers
+```{r, echo=FALSE}
+
+data_clean <- tibble()
+Nsubs <- unique(data$nsub)
+Conds <- unique(data$condicion)
+for (N in Nsubs){
+  for (C in Conds){
+  data_N <- data %>% filter(nsub==N, condicion==C)
+  outliers_N <- outliers_mcd(x=cbind(data_N$distancia,data_N$respuesta))
+  outliers_list <- outliers_N$outliers_val
+
+    # Eliminar outliers multivariados!
+  outliers_index <-  which(data_N$distancia%in%outliers_list$X1 & 
+                          data_N$respuesta%in%outliers_list$X2)
+
+  if (length(outliers_index)!=0){
+    data_N <- data_N[-outliers_index, ]
+    }
+  data_clean <- rbind(data_clean,data_N)
+  }
+}
+rm(data_N,outliers_list,outliers_N,outliers_index,C,Conds,N,Nsubs)
+```
+## Regresiones Lineales
+```{r}
+slopes_clean <- tibble()
+
+Nsubs <- unique(data_clean$nsub)
+Conds <- unique(data_clean$condicion)
+for (N in Nsubs){
+  for (C in Conds){
+  data_N <- data_clean %>% filter(nsub==N, condicion==C)
+  linear.model <- lm(respuesta~distancia,data_N)
+  data_N$slope <- linear.model$coefficients[2]
+  slopes_clean <- rbind(slopes_clean,data_N)
+  }
+}
+rm(data_N,C,Conds,N,Nsubs, linear.model)
+
+slopes_clean <- slopes_clean %>% 
+  summarise(nsub, bloque, condicion, slope, Frec) %>%
+  unique()
+```
+## Grafico Pendientes
+```{r}
+plt_1k_slope <- ggplot(slopes_clean%>% filter(Frec=="1k"), aes(x=condicion, y=slope, color=condicion)) + 
+  geom_boxplot()+
+  labs(title="Slopes 1k")+
+  theme_minimal()
+
+plt_4k_slope <- ggplot(slopes_clean%>% filter(Frec=="4k"), aes(x=condicion, y=slope, color=condicion)) + 
+  geom_boxplot()+
+  labs(title="Slopes 4k")+
+  theme_minimal()
+
+
+ggarrange(plt_1k_slope,plt_4k_slope, common.legend = TRUE)
+```
+## Filtrado de Outliers por Slope y T-Test
+```{r}
+slope_1k_WW <- slopes_clean %>% filter(Frec=="1k", condicion=="WW")
+slope_1k_LL <- slopes_clean %>% filter(Frec=="1k", condicion=="LL")
+slope_4k_WW <- slopes_clean %>% filter(Frec=="4k", condicion=="WW")
+slope_4k_LL <- slopes_clean %>% filter(Frec=="4k", condicion=="LL")
+
+
+outliers <-outliers_mad(slope_1k_WW$slope)
+outliers$limits[2]
+slope_1k_WW<- slope_1k_WW[slope_1k_WW$slope<outliers$limits[2],]
+
+outliers <-outliers_mad(slope_1k_LL$slope)
+outliers$limits[2]
+slope_1k_LL<- slope_1k_LL[slope_1k_LL$slope<outliers$limits[2],]
+
+outliers <-outliers_mad(slope_4k_WW$slope)
+outliers$limits[2]
+slope_4k_WW<- slope_1k_WW[slope_4k_WW$slope<outliers$limits[2],]
+
+outliers <-outliers_mad(slope_4k_LL$slope)
+outliers$limits[2]
+slope_4k_LL<- slope_4k_LL[slope_4k_LL$slope<outliers$limits[2],]
+
+t.test(x=slope_1k_WW$slope, slope_1k_LL$slope)
+t.test(x=slope_4k_WW$slope, slope_4k_LL$slope)
+
+#summary(lm(slope~condicion+Frec,data=slopes_clean))
+```
