@@ -1,5 +1,5 @@
 ---
-title: "Analisis de Potencia de Estudio de Percepción Auditiva de Distancia"
+title: "Auditory Distance Perception Study Power Analysis"
 author: "Lucas Gonzalez - Damian Payo - Manuel Eguia"
 date: "21/7/2023"
 output:
@@ -35,22 +35,24 @@ library(lmerTest)
 library(MuMIn)
 library(nortest)
 ```
-## Resumen
+## Abstract
 
-Se expone el analisis de los resultados obtenidos en el experimento de PAD en los mese de Junio y Julio del 2023 en el aula 27 de la Universidad Nacional del Quilmes.
+The analysis of results obtained from PAD experiment in June and July 2023 in room 27 of the National University of Quilmes is presented.
 
-Se realizaron dos experimentos. En el experimento 1(a) participaron 23 sujetos (16 varones, 6 mujeres y 1 no binarie) con edades comprendidas entre los 19 y 60 años (promedio = 29, desviación estándar = 9.69). En el experimento 1(b) participaron 22 sujetos (14 varones y 8 mujeres) con edades comprendidas entre los 19 y 63 años (promedio = 34.36, desviación estándar = 12.45).
+Two experiments were carried out. In experiment 1(a), 23 subjects participated (16 males, 6 females, and 1 non-binary) with ages ranging from 19 to 60 years (mean = 29, standard deviation = 9.69). 
 
-Experimento 1(a): Se expusieron 3 bloques de escucha con 3 condiciones (Wide, Low y High) con un filtro de corte de 1 kHz. Cada bloque está separado por un minuto de descanso.
-Experimentos 1(b): Se expusieron 3 bloques de escucha con 3 condiciones (Wide, Low y High) con un filtro de corte de 4 kHz. Cada bloque está separado por un minuto de descanso.
+Experiment 1(b), involved 22 subjects (14 males, and 8 females) aged 19 to 63 years (mean = 34.36, standard deviation = 12.45).
 
-## Carga de Datos
+**Experiment 1(a):** 3 listening blocks with 3 conditions (Wide, Low, and High) were exposed with a 1 kHz cutoff filter. Each block is separated by one minute of rest.
+**Experiments 1(b):** 3 listening blocks with 3 conditions (Wide, Low, and High) were exposed with a 4 kHz notch filter. Each block is separated by one minute of rest.
 
-Los datos del experimento 1(a) se encuentran en la carpeta Data_1k. Consta de 69 csv correspondientes a cada condicion/bloque de cada sujeto.
-- "nsub" es el ID otorgado al sujeto
-- "distancia" corresponde a la distancia real del estímulo sonoro. Puede tomar 12 valores.
-- "respuesta" corresponde a la respuesta del sujeto frente al estímulo
-- "bloque" no es el dato real del orden de bloque. Mas adelante se lo corrige.
+## Data Loading
+
+The data for experiment 1(a) are in the **Data_1k** folder. There are 69 .csv files corresponding to each condition/block for each subject.  <br>
+- "nsub" is the ID given to the subject <br>
+- "distancia" corresponds to the actual distance of the sound stimulus. It can contain 12 values.  <br>
+- "respuesta" is the subject's response to the stimulus <br>
+- "bloque" is not the actual data of the block order. It will be corrected later.  <br>
 
 ```{r Carga Datos, include=FALSE}
 dir_1k <- "./Data_1k"
@@ -68,13 +70,21 @@ data_4k <-
 data <- rbind(data_1k, data_4k)
 rm(dir_1k,dir_4k, data_1k, data_4k)
 ```
-## Paso a log log y etiqueto
+## Logarithmic and labeled values
 
-Aplicamos log(respuesta) y log(distancia) para poder hacer regresiones lineales entre las variales y obtener una pendiente que indique la compresión de distancia
+We apply logarithms to the response and distance observations in order to make linear regressions between the variables and obtain a slope indicating distance compression
 
-log(respuesta) = log(distancia)**alpha + intercept
+<div>
 
-Donde "alpha" es la compresión
+<p style="text-align:center;">
+
+<img src="./img/form.png" alt="JuveYell" width="250px"/>
+
+</p>
+
+
+Where <img src="./img/alpha.png" alt="JuveYell" width="10px"/> is the compression
+
 ```{r, echo=FALSE, include=FALSE}
 # Corregimos la columna de condicion con una etiqueta mas legible
 # WW -> Sin filtro
@@ -86,11 +96,12 @@ data$condicion[data$condicion==2] <- "HH"
 data$distancia <- log(data$distancia) 
 data$respuesta <- log(data$respuesta)
 ```
-##  Detección y eliminación de Outliers por Respuesta
+##  Outlier Detection and Removal by Response
 
-Aplicamos el criterio "Minimum Covariance Determinant" para detectar outliers multivariados.
+We applied the *Minimum Covariance Determinant* criteria to detect multivariate outliers.
 
-En total de las 4968 observaciones se eliminaron 938 con este método.
+We eliminated 938 observations from the total of 4968 with this method.
+
 ```{r, echo=FALSE, warning=FALSE}
 data_clean <- tibble()
 Nsubs <- unique(data$nsub)
@@ -113,13 +124,13 @@ for (N in Nsubs){
 }
 rm(data_N,outliers_list,outliers_N,outliers_index,C,Conds,N,Nsubs)
 ```
-## Regresiones Lineales
+## Linear Regressions
 
-Se realizó una regresión lineal por cada condición por sujeto. Generamos un nuevo tibble que contiene un valor de pendiente (slope) por cada condición por sujeto (nsub).
+We performed a linear regression for each condition per subject. We generate a new tibble containing a slope value for each condition per subject (nsub).
 
-Si slope vale 1 significa que la relación de compresión es 1 a 1, es decir que no hay compresión. Si es mayor a 1, significa que hay expansión. Si es menor a 1 significa que hay compresión de la distancia.
+If slope is 1, it means that the compression ratio is 1 to 1, it means that there is no compression. If it is higher than 1, it means that there is expansion. If it is less than 1, it means that there is distance compression.
 
-Además, se juntan todos los residuos (distancia a la regresión lineal) en un vector sresids. Por último se agrega el orden de los bloques correcto
+In addition, all the residuals (distance to linear regression) are put together in a vector (sresids). Finally, a variable is added with the order of the blocks by appearance during the experiment (order).
 
 ```{r include=FALSE}
 data_slopes <- tibble()
@@ -150,16 +161,18 @@ data_slopes <- merge(x=orden_bloques,y=data_slopes,
                              by=c("nsub","condicion"))
 rm(orden_bloques)
 ```
-## Eliminamos al sujeto 3 por reportar problemas de audición
+## Subject dismissal
+
+Before the evaluation, subjects were asked to complete a form with demographic information. Subject number 3 expressed hearing impairment in one ear, so we decided to exclude his data from the analysis.
 
 ```{r, message=FALSE,error=FALSE,warning=FALSE,include=FALSE}
 data_clean <- data_clean[!(data_clean$nsub==3), ]
 data_slopes <- data_slopes[!(data_slopes$nsub==3), ]
 ```
 
-### Observación de normalidad de los residuos observando
+### Observation of normality in residuals
 
-Graficamos un histograma y qqplot con los residuos de cada sujeto.
+We plotted a histogram and qqplot with the residuals of the linear regression performed for each subject.
 
 ```{r TODOS LOS RESIDUOS (viejo)}
 # Histogram & QQ Plot
@@ -168,9 +181,11 @@ qqnorm(sresids, main='Normal')
 qqline(sresids)
 #qqPlot(sresids)
 ```
-### Test Normalidad de los residuos Intrasujeto
+### Intrasubject residuals normality test
 
-Con el método Shapiro.Wilk se realiza un análisis de la normalidad de los residuos intrasujeto. Devuelve los nsubs que no permiten aprobar la h0 de que los residuos provienen de una distribución normal. Es decir, de todos los sujetos y condiciones evaluados, sólo 4 no presentan una distribución normal en los residuos (4-Wide, 12-Low, 16-Wide y 19-High)
+We performed an analysis of the normality of the intrasubject residuals with the Shapiro.Wilk method. The study compares subjects (nsubs) according to condition, reporting which ones do not allow us to approve the Null Hypothesis (H0) that residuals come from a normal distribution. 
+
+Of all the subjects and conditions evaluated, only 4 do not present a normal distribution in the residuals (4-Wide, 12-Low, 16-Wide and 19-High).
 
 ```{r Residuos intra-sujeto, warning=FALSE, message=FALSE}
 normality_test <- data_clean %>%
@@ -180,11 +195,11 @@ normality_test <- data_clean %>%
 
 normality_test%>%subset(p.value<0.05)
 ```
-### Detección de Outliers por Pendientes y filtrado de Incompletos
+### Outliers by Slopes and Incomplete filtering
 
-Se aplica el criterio MAD (robust median absolute deviation) para eliminar outliers univariados que corresponden a las pendientes (slope).
+We applied the MAD (robust median absolute deviation) criterion to eliminate univariate outliers corresponding to the slopes.
 
-Luego de quitan de la tabla los sujetos que no cuenten con una observación por cada condición.
+Then we eliminate from the table the subjects without an observation for each condition.
 
 ```{r}
 slope_1k_WW <- data_slopes %>% filter(Frec=="1k", condicion=="WW")
@@ -236,11 +251,10 @@ rm(slope_1k_HH, slope_1k_LL,slope_1k_WW,
 rm(outliers, count_conditions)
 ```
 
-### Test Normalidad Slopes
+### Normality Test Slopes
 
-Aplicamos Shapiro-Wilk para verificar si los datos pueden provenir de una distribución normal.
-En tal caso, los datos que no provienen de una distribución normal son los correspondientes a 
-la condicion "Low", tanto para el filtro de 1kHz como para el de 4kHz.
+We apply Shapiro-Wilk to check if data can come from a normal distribution.
+In this case, the data without a normal distribution are those corresponding to the "Low" condition, both for the 1kHz and 4kHz filters.
 
 ```{r, message=FALSE}
 normality_slopes <- data_slopes_clean %>%
@@ -252,10 +266,10 @@ normality_slopes <- data_slopes_clean %>%
 normality_slopes
 ```
 
-## Boxplot  con las Pendientes
+## Boxplot with Slopes
 
-Se grafica en un boxplot el total de las pendientes por condicion para 1kHz y para 4kHz, 
-haciendo mención al grado de significancia de los datos.
+We plotted in a boxplot the total slopes per condition for 1kHz and for 4kHz, noting the degree of significance in the data.
+
 ```{r, message=FALSE, warning=FALSE}
 cols <- c("#455A64", "#90A4AE", "#CFD8DC" )
 
@@ -312,8 +326,8 @@ ggplot(data_clean %>% filter(Frec == '1k'), aes(x=distancia, y=respuesta, color=
 
 ## T-test
 
-Se exponen los resultados en donde sólo se presenta una diferencia significativa 
-entre Low-Wde y Low-High para 1kHz (esto se muestra en el boxplot anterior).
+The results show a significant difference between Low-Wide and Low-High for 1kHz, justifying the data shown in the previous graph.
+
 ```{r}
 slope_1k_WW <- data_slopes_clean %>% 
   filter(Frec=="1k", condicion=="WW")
@@ -350,7 +364,11 @@ rm(WW_HH_1k,LL_HH_1k,WW_LL_1k,WW_LL_4k,WW_HH_4k,LL_HH_4k)
 # Mostramos el tibble con los resultados
 T_test_condicion
 ```
-## AnOVa a partir del modelo lineal
+## AnOVa from the linear model
+
+In the ANOVA analysis, we show that the Condition factor is significant for determining slope variation in experiments performed with a cutoff frequency at 1kHz (p-value < 0.001), but not for studies performed with a cutoff frequency of 4kHz.
+
+To see the degree of significance according to condition we performed pairwise comparisons between group levels with bonferroni correction for multiple testing (pairwise.t.test) which exposes the result in more detail.
 
 ```{r 1k_1}
 slopes_1k_clean <- data_slopes_clean%>%filter(Frec=="1k")
@@ -379,10 +397,14 @@ pairwise.t.test(slopes_4k_clean$slope,
                 slopes_4k_clean$condicion, 
                 p.adjust.method = "bonferroni")
 ```
-## Modelo Lineal con Efectos Mixtos
+## Linear Model with Mixed Effects
 
-Referencia de linear mixed model effect: 
-https://www.youtube.com/watch?v=AWInLxpiZuA
+Applying this type of linear mixed-effects model adds the subject (nsub) as a random factor. In other words, a subject-condition interaction is added.
+
+This analysis allows to evaluate the variation of slopes between intrasubject conditions.
+
+[Reference](https://www.youtube.com/watch?v=AWInLxpiZuA)
+
 
 ### LMER en 1k
 ```{r 1k_2}
@@ -402,7 +424,7 @@ emmeans(lmer.1k,
 
 qqnorm(resid(lmer.1k))
 ```
-### LMER en 4k
+### LMER in 4k
 
 ```{r 4k_2}
 lmer.4k <- lmer(slope ~ condicion + (1|nsub),
@@ -423,7 +445,11 @@ qqnorm(resid(lmer.4k))
 ```
 
 
-## EXTRA: Grafico por orden de bloques
+## EXTRA: boxplot by block order
+
+We performed an analysis of slopes by condition according to the order of occurrence of the stimuli during the experiment. This allows us to evaluate whether the compression of the slopes is related to the order of appearance.
+
+It is possible to infer that responses tend to exhibit more compressed slopes in Low as this more advanced block is presented. However, this conditional is not expressed in the rest of conditions.
 
 ```{r COMPARO}
 
