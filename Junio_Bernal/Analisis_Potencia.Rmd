@@ -50,8 +50,8 @@ Experiment 1(b), involved 22 subjects (14 males, and 8 females) aged 19 to 63 ye
 
 The data for experiment 1(a) are in the **Data_1k** folder. There are 69 .csv files corresponding to each condition/block for each subject.  <br>
 - "nsub" is the ID given to the subject <br>
-- "distancia" corresponds to the actual distance of the sound stimulus. It can contain 12 values.  <br>
-- "respuesta" is the subject's response to the stimulus <br>
+- "dist_log" corresponds to the actual distance of the sound stimulus. It can contain 12 values.  <br>
+- "resp_log" is the subject's response to the stimulus <br>
 - "bloque" is not the actual data of the block order. It will be corrected later.  <br>
 
 ```{r Carga Datos, include=FALSE}
@@ -93,8 +93,9 @@ Where <img src="./img/alpha.png" alt="JuveYell" width="10px"/> is the compressio
 data$condicion[data$condicion==0] <- "WW"
 data$condicion[data$condicion==1] <- "LL"
 data$condicion[data$condicion==2] <- "HH"
-data$distancia <- log(data$distancia) 
-data$respuesta <- log(data$respuesta)
+data$dist_log <- log10(data$distancia) 
+data$resp_log <- log10(data$respuesta)
+
 ```
 ##  Outlier Detection and Removal by Response
 
@@ -109,12 +110,12 @@ Conds <- unique(data$condicion)
 for (N in Nsubs){
   for (C in Conds){
   data_N <- data %>% filter(nsub==N, condicion==C)
-  outliers_N <- outliers_mcd(x=cbind(data_N$distancia,data_N$respuesta))
+  outliers_N <- outliers_mcd(x=cbind(data_N$dist_log,data_N$resp_log))
   outliers_list <- outliers_N$outliers_val
 
     # Eliminar outliers multivariados!
-  outliers_index <-  which(data_N$distancia%in%outliers_list$X1 & 
-                          data_N$respuesta%in%outliers_list$X2)
+  outliers_index <-  which(data_N$dist_log%in%outliers_list$X1 & 
+                          data_N$resp_log%in%outliers_list$X2)
 
   if (length(outliers_index)!=0){
     data_N <- data_N[-outliers_index, ]
@@ -141,8 +142,9 @@ Conds <- unique(data_clean$condicion)
 for (N in Nsubs){
   for (C in Conds){
   data_N <- data_clean %>% filter(nsub==N, condicion==C)
-  linear.model <- lm(respuesta~distancia,data_N)
+  linear.model <- lm(resp_log~dist_log,data_N)
   data_N$slope <- linear.model$coefficients[2]
+  data_N$intercept <- linear.model$coefficients[1]
   data_N$res <- as.vector(rstandard(linear.model))
   data_slopes <- rbind(data_slopes,data_N)
   sresids <- append(sresids, as.vector(rstandard(linear.model)))
@@ -150,15 +152,17 @@ for (N in Nsubs){
 }
 rm(data_N,C,Conds,N,Nsubs, linear.model)
 
-data_clean <- data_slopes
-data_slopes <- data_slopes %>%
-  summarise(nsub, condicion, slope, Frec) %>%
-  unique()
-
 # Agrego el orden de los bloques
 orden_bloques <- read.csv("./orden_bloques.csv")
 data_slopes <- merge(x=orden_bloques,y=data_slopes,
                              by=c("nsub","condicion"))
+
+data_clean <- data_slopes
+data_slopes <- data_slopes %>%
+  summarise(nsub, condicion, slope, intercept, Frec) %>%
+  unique()
+
+
 rm(orden_bloques)
 ```
 ## Subject dismissal
@@ -246,6 +250,28 @@ drops <- count_conditions %>% subset(n!=3)
 data_slopes_clean <- data_slopes_clean[!(data_slopes_clean$nsub%in%
                                                  drops$nsub), ]
 
+data_clean <- data_clean[!(data_clean$nsub%in%
+                             drops$nsub), ]
+```
+
+### Reescritura de data_clean con los datos que teniamos, sumando los promedios y desviación standar.
+
+```{r}
+data_prom <- data_clean %>%
+  group_by(condicion, dist_log, Frec) %>%
+  summarise(condicion,
+            distancia,
+            respuesta,
+            prom_lin = mean(respuesta), 
+            sd_lin = sd(respuesta), 
+            std_lin = std.error(respuesta),
+            dist_log,
+            resp_log,
+            prom_log = mean(resp_log), 
+            sd_log = sd(resp_log), 
+            std_log = std.error(resp_log),
+            Frec)
+
 rm(slope_1k_HH, slope_1k_LL,slope_1k_WW,
    slope_4k_HH,slope_4k_LL,slope_4k_WW)
 rm(outliers, count_conditions)
@@ -311,17 +337,15 @@ plt_4k_slope <- ggplot(data_slopes_clean %>%
 
 ggarrange(plt_1k_slope,plt_4k_slope, common.legend = TRUE)
 ```
-```{r eval=FALSE, include=FALSE}
-ggplot(data_clean %>% filter(Frec == '1k'), aes(x=distancia, y=respuesta, color=condicion)) +
-  geom_point(alpha = 1/2, size = 1) +
+```{r echo=FALSE}
+ggplot(data_clean %>% filter(Frec == '1k'), aes(x=dist_log, y=resp_log, color=condicion)) +
+    scale_color_manual(values = cols, labels = c('Wide Band', 'Low Pass', 'High Pass')) +
   geom_smooth(method = lm, se = FALSE, size=0.5) +
   facet_wrap(~nsub) +
+    theme(axis.title.x = element_blank(),
+        axis.title.y = element_text(size = 9),
+        plot.title = element_text(size = 10, hjust = 0.5)) +
   theme_minimal()
-# ggplot(data_clean %>% filter(Frec == '1k', condicion == 'WW', nsub == 20), aes(x=distancia, y=respuesta)) +
-#   geom_point(alpha = 1/2, size = 1) +
-#   geom_smooth(method = lm, se = FALSE, size=0.5) +
-#   facet_wrap(~nsub) +
-#   theme_minimal()
 ```
 
 ## T-test
@@ -462,7 +486,8 @@ It is possible to infer that responses tend to exhibit more compressed slopes in
 
 plt_1k_per_block <- ggplot(slopes_1k_clean,
                            aes(x=as.character(orden),
-                               y=slope,color=condicion)) + 
+                               y=slope,
+                               color=condicion)) + 
   geom_boxplot()+
   #geom_point(position = "jitter")+
   xlab("Bloque")+
@@ -481,4 +506,31 @@ plt_4k_per_block <- ggplot(slopes_4k_clean,
   theme_minimal()
 
 ggarrange(plt_1k_per_block,plt_4k_per_block, common.legend = TRUE)
+```
+```{r}
+data_clean <- data_clean %>%
+  group_by(condicion, dist_log, Frec) %>%
+  summarise(resp_log, 
+            nsub,
+            Frec,
+            bloque,
+            prom_lin = 
+            promedio = mean(resp_log), 
+            sd = sd(resp_log), 
+            std = std.error(resp_log))
+
+
+G_Prom_All <- ggplot(data_clean %>% filter(Frec == '1k'), aes(x=dist_log,
+                               y=resp_log,
+                               color = condicion)) +
+  #geom_point() +
+  geom_smooth(method = lm, se = FALSE) +
+  # scale_x_log10() +
+  # scale_y_log10() +
+  geom_errorbar(aes(ymin=min(resp_log), ymax=max(resp_log)), width = 0.1) +
+  # facet_grid(rows = vars(ID)) +
+  labs(title = "Promedio y Barras de Error") +
+  theme_minimal()
+
+G_Prom_All
 ```
