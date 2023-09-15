@@ -1,0 +1,588 @@
+---
+title: "Auditory Distance Perception Study Power Analysis"
+author: "Lucas Gonzalez - Damian Payo - Manuel Eguia"
+date: "15/9/2023"
+output:
+  html_document:
+    code_folding: "hide"
+    theme: paper
+    highlight: pygments
+    toc: true
+editor_options: 
+  markdown: 
+    wrap: 72
+---
+
+```{r setup, include=FALSE, echo=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(readr)
+library(dplyr)
+library(here)
+library(ggplot2)
+library(plotrix)
+library(segmented)
+library(Routliers)
+library(tidyverse)
+library(ggpubr)
+library(car)
+library(data.table)
+library(lme4)
+library(nlme)
+library(emmeans)
+library(sjstats)
+library(lmerTest)
+library(MuMIn)
+library(nortest)
+```
+## Abstract
+
+The analysis of results obtained from PAD experiment in June and July 2023 in room 27 of the National University of Quilmes is presented.
+
+Two experiments were carried out. In experiment 1(a), 23 subjects participated (16 males, 6 females, and 1 non-binary) with ages ranging from 19 to 60 years (mean = 29, standard deviation = 9.69). 
+
+Experiment 1(b), involved 22 subjects (14 males, and 8 females) aged 19 to 63 years (mean = 34.36, standard deviation = 12.45).
+
+**Experiment 1(a):** 3 listening blocks with 3 conditions (Wide, Low, and High) were exposed with a 1 kHz cutoff filter. Each block is separated by one minute of rest.
+**Experiments 1(b):** 3 listening blocks with 3 conditions (Wide, Low, and High) were exposed with a 4 kHz notch filter. Each block is separated by one minute of rest.
+
+## Data Loading
+
+The data for experiment 1(a) are in the **Data_1k** folder. There are 69 .csv files corresponding to each condition/block for each subject.  <br>
+- "nsub" is the ID given to the subject <br>
+- "dist_log" corresponds to the actual distance of the sound stimulus. It can contain 12 values.  <br>
+- "resp_log" is the subject's response to the stimulus <br>
+- "bloque" is not the actual data of the block order. It will be corrected later.  <br>
+
+```{r Carga Datos, include=FALSE}
+dir_1k_DR <- "./Data_1k_DR"
+data_1k_DR <- 
+    list.files(path=dir_1k_DR, pattern = "*.csv",full.names = TRUE) %>% 
+    map_df(~fread(.) %>% mutate(trial_Order = row_number())) %>%
+    mutate(freq = "1k")
+
+rm(dir_1k_DR)
+```
+## Labeling
+```{r}
+# Corregimos la columna de condicion con una etiqueta mas legible
+# WW -> Sin filtro
+# LL -> Filtro pasa-bajo
+# HH -> Filtro pasa-alto
+data$condicion[data$condicion==0] <- "WW"
+data$condicion[data$condicion==1] <- "LL"
+data$condicion[data$condicion==2] <- "HH"
+
+orden_bloques <- read.csv("./orden_bloques.csv")
+data <- merge(x=orden_bloques,y=data,
+                             by=c("nsub","condicion"))
+
+# Erase redundant columns
+data <- data[, !names(data) %in% c("bloque","altura")]
+
+rm(orden_bloques)
+```
+## Log-Log Distance-Responses
+
+We apply logarithms to the response and distance observations in order to make linear regressions between the variables and obtain a slope indicating distance compression
+
+<div>
+
+<p style="text-align:center;">
+
+<img src="./img/form.png" alt="JuveYell" width="250px"/>
+
+</p>
+
+
+Where <img src="./img/alpha.png" alt="JuveYell" width="10px"/> is the compression
+
+```{r, echo=FALSE, include=FALSE}
+
+data$dist_log <- log10(data$distancia) 
+data$resp_log <- log10(data$respuesta)
+
+```
+##  Outlier Detection and Removal by Response
+
+We applied the *Minimum Covariance Determinant* criteria to detect multivariate outliers.
+
+We eliminated 938 observations from the total of 4968 with this method.
+
+```{r, echo=FALSE, warning=FALSE}
+data_clean <- tibble()
+Nsubs <- unique(data$nsub)
+Conds <- unique(data$condicion)
+for (N in Nsubs){
+  for (C in Conds){
+  data_N <- data %>% filter(nsub==N, condicion==C)
+  outliers_N <- outliers_mcd(x=cbind(data_N$dist_log,data_N$resp_log))
+  outliers_list <- outliers_N$outliers_val
+
+    # Eliminar outliers multivariados!
+  outliers_index <-  which(data_N$dist_log%in%outliers_list$X1 & 
+                          data_N$resp_log%in%outliers_list$X2)
+
+  if (length(outliers_index)!=0){
+    data_N <- data_N[-outliers_index, ]
+    }
+  data_clean <- rbind(data_clean,data_N)
+  }
+}
+rm(data_N,outliers_list,outliers_N,outliers_index,C,Conds,N,Nsubs)
+```
+## Linear Regressions
+
+We performed a linear regression for each condition per subject. We generate a new tibble containing a slope value for each condition per subject (nsub).
+
+If slope is 1, it means that the compression ratio is 1 to 1, it means that there is no compression. If it is higher than 1, it means that there is expansion. If it is less than 1, it means that there is distance compression.
+
+In addition, all the residuals (distance to linear regression) are put together in a vector (sresids). Finally, a variable is added with the order of the blocks by appearance during the experiment (order).
+
+```{r include=FALSE}
+data_slopes <- tibble()
+sresids <- vector()
+
+Nsubs <- unique(data_clean$nsub)
+Conds <- unique(data_clean$condicion)
+for (N in Nsubs){
+  for (C in Conds){
+  data_N <- data_clean %>% filter(nsub==N, condicion==C)
+  linear.model <- lm(resp_log~dist_log,data_N)
+  data_N$slope <- linear.model$coefficients[2]
+  data_N$intercept <- linear.model$coefficients[1]
+  data_N$res <- as.vector(rstandard(linear.model))
+  data_slopes <- rbind(data_slopes,data_N)
+  sresids <- append(sresids, as.vector(rstandard(linear.model)))
+  }
+}
+rm(data_N,C,Conds,N,Nsubs, linear.model)
+
+data_clean <- data_slopes
+data_slopes <- data_slopes %>%
+  summarise(nsub, condicion, orden_bloque, slope, intercept, freq) %>%
+  unique()
+
+```
+## Subject dismissal
+
+Before the evaluation, subjects were asked to complete a form with demographic information. Subject number 3 expressed hearing impairment in one ear, so we decided to exclude his data from the analysis.
+
+```{r, message=FALSE,error=FALSE,warning=FALSE,include=FALSE}
+data_clean <- data_clean[!(data_clean$nsub==3), ]
+data_slopes <- data_slopes[!(data_slopes$nsub==3), ]
+```
+
+### Observation of normality in residuals
+
+We plotted a histogram and qqplot with the residuals of the linear regression performed for each subject.
+
+```{r TODOS LOS RESIDUOS (viejo)}
+# Histogram & QQ Plot
+hist(sresids, col='steelblue', main='Residues',xlab="Residues")
+qqnorm(sresids, main='Normal')
+qqline(sresids)
+#qqPlot(sresids)
+```
+### Intrasubject residuals normality test
+
+We performed an analysis of the normality of the intrasubject residuals with the Shapiro.Wilk method. The study compares subjects (nsubs) according to condition, reporting which ones do not allow us to approve the Null Hypothesis (H0) that residuals come from a normal distribution. 
+
+Of all the subjects and conditions evaluated, only 4 do not present a normal distribution in the residuals (4-Wide, 12-Low, 16-Wide and 19-High).
+
+```{r Residuos intra-sujeto, warning=FALSE, message=FALSE}
+normality_test <- data_clean %>%
+  group_by(nsub, condicion) %>%
+  summarise(statistic = shapiro.test(res)$statistic,
+            p.value = shapiro.test(res)$p.value)
+
+normality_test%>%subset(p.value<0.05)
+```
+```{r}
+## residuos ploteados en dos ejes, para poder ver la variabilidad por 
+## distancia por condicion por frecuencia.6 figuras en total
+cols <- c("#455A64", "#90A4AE", "#CFD8DC" )
+
+ggplot(data_clean, aes(x=res, fill=condicion))+
+  geom_histogram(binwidth = 0.2)+
+  scale_fill_manual(values = cols,
+                    limits = c('WW', 'LL', 'HH'), 
+                   labels = c('Wide Band', 'Low Pass', 'High Pass')) +
+  labs(y='Slopes', x="Residuals", fill="Condition")+
+  facet_wrap(~freq+condicion, labeller = "label_value")+
+  #label_value(labels= c('Wide Band', 'Low Pass', 'High Pass'))+
+  theme_minimal()
+
+ggplot(data_clean, aes(x=dist_log, y=res, color=condicion))+
+  geom_point()+
+  geom_hline(yintercept = 0)+
+  facet_wrap(~freq+condicion)+
+  theme_minimal()
+
+```
+
+### Outliers by Slopes and Incomplete subjects filtering
+
+We applied the MAD (robust median absolute deviation) criterion to eliminate univariate outliers corresponding to the slopes.
+
+Then we eliminate from the table the subjects without an observation for each condition.
+
+```{r}
+slope_1k_WW <- data_slopes %>% filter(freq=="1k", condicion=="WW")
+slope_1k_LL <- data_slopes %>% filter(freq=="1k", condicion=="LL")
+slope_1k_HH <- data_slopes %>% filter(freq=="1k", condicion=="HH")
+
+slope_4k_WW <- data_slopes %>% filter(freq=="4k", condicion=="WW")
+slope_4k_LL <- data_slopes %>% filter(freq=="4k", condicion=="LL")
+slope_4k_HH <- data_slopes %>% filter(freq=="4k", condicion=="HH")
+
+# 1k
+outliers <-outliers_mad(slope_1k_WW$slope)
+#outliers$limits[2]
+slope_1k_WW<- slope_1k_WW[slope_1k_WW$slope<outliers$limits[2],]
+
+outliers <-outliers_mad(slope_1k_LL$slope)
+#outliers$limits[2]
+slope_1k_LL<- slope_1k_LL[slope_1k_LL$slope<outliers$limits[2],]
+
+outliers <-outliers_mad(slope_1k_HH$slope)
+#outliers$limits[2]
+slope_1k_HH<- slope_1k_HH[slope_1k_HH$slope<outliers$limits[2],]
+
+# 4k
+outliers <-outliers_mad(slope_4k_WW$slope)
+#outliers$limits[2]
+slope_4k_WW<- slope_4k_WW[slope_4k_WW$slope<outliers$limits[2],]
+
+outliers <-outliers_mad(slope_4k_LL$slope)
+#outliers$limits[2]
+slope_4k_LL<- slope_4k_LL[slope_4k_LL$slope<outliers$limits[2],]
+
+outliers <-outliers_mad(slope_4k_HH$slope)
+#outliers$limits[2]
+slope_4k_HH<- slope_4k_HH[slope_4k_HH$slope<outliers$limits[2],]
+
+data_slopes_clean <- (rbind(slope_1k_HH,slope_1k_LL,slope_1k_WW,
+                            slope_4k_HH,slope_4k_LL,slope_4k_WW))
+
+count_conditions <- data_slopes_clean %>% 
+  group_by(nsub) %>% 
+  summarise(n = n())
+drops <- count_conditions %>% subset(n!=3)
+
+data_slopes_clean <- data_slopes_clean[!(data_slopes_clean$nsub%in%
+                                                 drops$nsub), ]
+
+data_clean <- data_clean[!(data_clean$nsub%in%
+                             drops$nsub), ]
+
+rm(count_conditions, outliers)
+rm(slope_1k_HH, slope_1k_LL,slope_1k_WW,
+   slope_4k_HH,slope_4k_LL,slope_4k_WW)
+```
+### Normality Test Slopes
+
+We apply Shapiro-Wilk to check if data can come from a normal distribution.
+In this case, the data without a normal distribution are those corresponding to the "Low" condition, both for the 1kHz and 4kHz filters.
+
+```{r, message=FALSE}
+normality_slopes <- data_slopes_clean %>%
+  group_by(freq, condicion) %>%
+  summarise(statistic = shapiro.test(slope)$statistic,
+            p.value = shapiro.test(slope)$p.value, 
+            normality=(p.value>0.05))
+
+normality_slopes
+```
+## Slopes Boxplot
+
+We plotted in a boxplot the total slopes per condition for 1kHz and for 4kHz, noting the degree of significance in the data.
+
+```{r, message=FALSE, warning=FALSE}
+cols <- c("#455A64", "#90A4AE", "#CFD8DC" )
+
+plt_1k_slope <- ggplot(data_slopes_clean %>% 
+                         filter(freq=="1k"), 
+                       aes(x=condicion, y=slope, fill=condicion)) + 
+  stat_boxplot(geom = "errorbar",
+               width = 0.25) + 
+  geom_boxplot(alpha=0.8, outlier.colour=NA, width = 0.4)+
+  scale_x_discrete(limits = c('WW', 'LL', 'HH'), 
+                   labels = c('Wide Band', 'Low Pass', 'High Pass')) +
+  scale_fill_manual(values = cols, guide='none') +
+  scale_y_continuous(limits=c(0,2)) +
+  labs(title="Cut frequency = 1 kHz", y='Slopes')+
+  annotate("text", x = 1.5, y = 1.6,  label = "***", size = 4) +
+  annotate("segment", x = 0.7, xend = 2.2, y = 1.55, 
+           yend = 1.55, colour = "black", size=.3, alpha=1,) +
+  annotate("text", x = 2.5, y = 1.8,  label = "***", size = 4) +
+  annotate("segment", x = 1.75, xend = 3.2, y = 1.75, 
+           yend = 1.75, colour = "black", size=.3, alpha=1,) +
+  theme(axis.title.x = element_blank(),
+        axis.title.y = element_text(size = 9),
+        plot.title = element_text(size = 10, hjust = 0.5))
+
+plt_4k_slope <- ggplot(data_slopes_clean %>% 
+                         filter(freq=="4k" & slope < 1.6), 
+                       aes(x=condicion, y=slope, fill=condicion)) + 
+  stat_boxplot(geom = "errorbar",
+               width = 0.25) + 
+  geom_boxplot(alpha = 0.8, outlier.colour=NA, width = 0.4)+
+  scale_x_discrete(limits = c('WW', 'LL', 'HH'),
+                   labels = c('Wide Band', 'Low Pass', 'High Pass')) +
+  scale_fill_manual(values = cols, guide='none') +
+  scale_y_continuous(limits=c(0,2)) +
+  labs(title="Cut frequency = 4 kHz")+
+  theme(axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        plot.title = element_text(size = 10, hjust = 0.5))
+
+ggarrange(plt_1k_slope,plt_4k_slope, common.legend = TRUE)
+```
+### Regressions Plot
+
+```{r echo=FALSE}
+ggplot(data_clean %>% filter(freq == '1k'), aes(x=dist_log, y=resp_log, color=condicion)) +
+    scale_color_manual(values = cols, labels = c('Wide Band', 'Low Pass', 'High Pass')) +
+  geom_smooth(method = lm, se = FALSE, size=0.5) +
+  facet_wrap(~nsub) +
+    theme(axis.title.x = element_blank(),
+        axis.title.y = element_text(size = 9),
+        plot.title = element_text(size = 10, hjust = 0.5)) +
+  theme_minimal()
+
+ggplot(data_clean %>% filter(freq == '4k'), aes(x=dist_log, y=resp_log, color=condicion)) +
+    scale_color_manual(values = cols, labels = c('Wide Band', 'Low Pass', 'High Pass')) +
+  geom_smooth(method = lm, se = FALSE, size=0.5) +
+  facet_wrap(~nsub) +
+    theme(axis.title.x = element_blank(),
+        axis.title.y = element_text(size = 9),
+        plot.title = element_text(size = 10, hjust = 0.5)) +
+  theme_minimal()
+```
+### FALTA data_prom tibble with means and std per condition
+
+```{r, include=FALSE}
+data_prom <- data_clean %>%
+  group_by(condicion, dist_log, freq) %>%
+  summarise(condicion,
+            distancia,
+            respuesta,
+            prom_lin = mean(respuesta), 
+            sd_lin = sd(respuesta), 
+            std_lin = std.error(respuesta),
+            dist_log,
+            resp_log,
+            prom_log = mean(resp_log), 
+            sd_log = sd(resp_log), 
+            std_log = std.error(resp_log),
+            freq)
+
+G_Prom <- ggplot(data_prom,
+                 aes(x=distancia, y=prom_lin,
+                     color = condicion)) +
+  geom_point() +
+  geom_smooth(se = FALSE) +
+  # scale_x_log10() +
+  # scale_y_log10() +
+  geom_errorbar(aes(ymin=prom_lin-std_lin,
+                    ymax=prom_lin+std_lin),
+                width = 0.2) +
+  # facet_grid(rows = vars(ID)) +
+  labs(title = paste0("Promedio y Barras de Error")) +
+  theme_minimal()
+
+G_Prom
+```
+## Mixed Design Model
+
+Applying this type of linear mixed-effects model adds the subject (nsub) as a random factor. In other words, a subject-condition interaction is added.
+
+This analysis allows to evaluate the variation of slopes between intrasubject conditions.
+
+[Reference](https://www.youtube.com/watch?v=AWInLxpiZuA)
+
+
+### One way Anova with reapeated measures for Freq=1k
+```{r 1k_2}
+lmer.1k <- lmer(slope ~ condicion + (1|nsub),
+    data = slopes_1k_clean)
+summary(lmer.1k)
+
+anova(lmer.1k)
+
+##partial eta sq
+effectsize::eta_squared(lmer.1k, partial = TRUE)
+#Rsq
+r.squaredGLMM(lmer.1k)  
+
+emmeans(lmer.1k, 
+        list(pairwise ~ condicion),
+        adjust="bonferroni")
+
+qqnorm(resid(lmer.1k))
+```
+### One way Anova with reapeated measures LMER for Freq=4k
+
+```{r 4k_2}
+lmer.4k <- lmer(slope ~ condicion + (1|nsub),
+    data = slopes_4k_clean)
+
+anova(lmer.4k)
+
+##partial eta sq
+effectsize::eta_squared(lmer.4k, partial = TRUE)
+#Rsq
+r.squaredGLMM(lmer.4k)  
+
+emmeans(lmer.4k, 
+        list(pairwise ~ condicion),
+        adjust="bonferroni")
+
+qqnorm(resid(lmer.4k))
+```
+
+## Suplementary Analysis 
+
+### One way ANOVA (OLD)
+
+This test was made only for comparison with the mixed design model.
+
+In the ANOVA analysis without random effects, we show that the Condition factor is significant for determining slope variation in experiments performed with a cutoff frequency at 1kHz (p-value < 0.001), but not for studies performed with a cutoff frequency of 4kHz.
+
+To see the degree of significance according to condition we performed pairwise comparisons between group levels with bonferroni correction for multiple testing (pairwise.t.test) which exposes the result in more detail.
+
+
+```{r 1k_1}
+slopes_1k_clean <- data_slopes_clean%>%filter(freq=="1k")
+
+lm.1k <-lm(slope~condicion,
+               data=slopes_1k_clean)
+# summary(lm.1k)
+
+anova(lm.1k)
+
+pairwise.t.test(slopes_1k_clean$slope,
+                slopes_1k_clean$condicion,
+                p.adjust.method = "bonferroni")
+```
+
+```{r 4k_1}
+slopes_4k_clean <- data_slopes_clean%>%filter(freq=="4k")
+
+lm_4k <-lm(slope ~ condicion,
+                data=slopes_4k_clean)
+#summary(lm_4k)
+
+anova(lm_4k)
+
+pairwise.t.test(slopes_4k_clean$slope,
+                slopes_4k_clean$condicion, 
+                p.adjust.method = "bonferroni")
+```
+
+
+### Adding Block-Order as factor to the model
+
+#### Block-Order Boxplot
+
+We performed an analysis of slopes by condition according to the order of occurrence of the stimuli during the experiment. This allows us to evaluate whether the compression of the slopes is related to the order of appearance.
+
+It is possible to infer that responses tend to exhibit more compressed slopes in Low as this more advanced block is presented. However, this conditional is not expressed in the rest of conditions.
+
+```{r COMPARO}
+plt_1k_per_block <- ggplot(slopes_1k_clean,
+                           aes(x=as.character(orden_bloque),
+                               y=slope,
+                               color=condicion)) + 
+  geom_boxplot()+
+  #geom_point(position = "jitter")+
+  xlab("Bloque")+
+  ylab("Pendiente")+
+  labs(title="Pendientes por bloque 1k")+
+  scale_y_continuous(limits=c(0,2)) +
+  theme_minimal()
+
+plt_4k_per_block <- ggplot(slopes_4k_clean,
+                           aes(x=as.character(orden_bloque),
+                               y=slope,color=condicion)) + 
+  geom_boxplot()+
+  #geom_point(position = "jitter")+
+  xlab("Bloque")+
+  ylab("Pendiente")+
+  labs(title="Pendientes por bloque  4k")+
+  scale_y_continuous(limits=c(0,2)) +
+  theme_minimal()
+
+ggarrange(plt_1k_per_block,plt_4k_per_block, common.legend = TRUE)
+```
+
+### 1k Two factor Mixed design ANOVA
+
+```{r}
+# Fit a linear mixed-effects model with the 
+# interaction between "Order" and "condicion"
+model_lmer_1k <- lmer(slope ~ condicion*as.factor(orden_bloque) + (1|nsub),
+                   data = slopes_1k_clean)
+
+modelo <- lm()
+
+# Get the summary of the model
+summary(model_lmer_1k)
+
+anova(model_lmer_1k)
+```
+#### Post-hoc
+```{r}
+emmeans(model_lmer_1k,
+        list(pairwise ~ condicion),
+        adjust="bonferroni")
+emmeans(model_lmer_1k,
+        list(pairwise ~ orden_bloque),
+        adjust="bonferroni")
+```
+
+### 4k Two factor Mixed design ANOVA
+
+```{r}
+# Fit a linear mixed-effects model with the 
+# interaction between "Order" and "condicion"
+model_lmer_4k <- lmer(slope ~ condicion*as.factor(orden_bloque) + (1|nsub),
+                   data = slopes_4k_clean)
+
+# Get the summary of the model
+summary(model_lmer_4k)
+
+anova(model_lmer_4k)
+```
+
+#### Post-hoc
+```{r}
+emmeans(model_lmer_4k,
+        list(pairwise ~ condicion),
+        adjust="bonferroni")
+emmeans(model_lmer_4k,
+        list(pairwise ~ orden_bloque),
+        adjust="bonferroni")
+```
+### Conclusión sobre agregar un factor de orden
+
+Si bien este tipo de test no nos permite sacar una conclusión clara sobre si el orden de los bloques afecta, este no encuentra un efecto significativo en el factor tanto para el filtro con corte en 1k como en 4k.
+
+### Modelo mixto agregando predictores 
+
+(sugerencia de nacho luego de una corrección que le hicieron en un trabajo)
+
+Este modelo es el siguiente:
+
+```{r}
+data_clean_1k <- data_clean %>% filter(freq=="4k")
+lmer2.1k <- lmer(respuesta ~ condicion*distancia + (1|nsub), data=data_clean_1k)
+summary(lmer2.1k)
+
+anova(lmer2.1k)
+
+emmeans(lmer2.1k,
+        list(pairwise ~ condicion*distancia),
+        adjust="bonferroni")
+```
