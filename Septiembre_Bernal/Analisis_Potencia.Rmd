@@ -69,9 +69,10 @@ rm(dir_1k_DR)
 # WW -> Sin filtro
 # LL -> Filtro pasa-bajo
 # HH -> Filtro pasa-alto
-data$condicion[data$condicion==0] <- "WW"
-data$condicion[data$condicion==1] <- "LL"
-data$condicion[data$condicion==2] <- "HH"
+data_1k_DR$condicion[data_1k_DR$condicion==0] <- "WW"
+data_1k_DR$condicion[data_1k_DR$condicion==1] <- "LL"
+data_1k_DR$condicion[data_1k_DR$condicion==2] <- "LW"
+data_1k_DR$condicion[data_1k_DR$condicion==3] <- "WL"
 
 orden_bloques <- read.csv("./orden_bloques.csv")
 data <- merge(x=orden_bloques,y=data,
