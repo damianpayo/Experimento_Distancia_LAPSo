@@ -75,11 +75,11 @@ data_1k_DR$condicion[data_1k_DR$condicion==2] <- "LW"
 data_1k_DR$condicion[data_1k_DR$condicion==3] <- "WL"
 
 orden_bloques <- read.csv("./orden_bloques.csv")
-data <- merge(x=orden_bloques,y=data,
+data_1k_DR <- merge(x=orden_bloques,y=data_1k_DR,
                              by=c("nsub","condicion"))
 
 # Erase redundant columns
-data <- data[, !names(data) %in% c("bloque","altura")]
+data_1k_DR <- data_1k_DR[, !names(data_1k_DR) %in% c("bloque","altura")]
 
 rm(orden_bloques)
 ```
@@ -100,8 +100,8 @@ Where <img src="./img/alpha.png" alt="JuveYell" width="10px"/> is the compressio
 
 ```{r, echo=FALSE, include=FALSE}
 
-data$dist_log <- log10(data$distancia) 
-data$resp_log <- log10(data$respuesta)
+data_1k_DR$dist_log <- log10(data_1k_DR$distancia) 
+data_1k_DR$resp_log <- log10(data_1k_DR$respuesta)
 
 ```
 ##  Outlier Detection and Removal by Response
@@ -112,12 +112,13 @@ We eliminated 938 observations from the total of 4968 with this method.
 
 ```{r, echo=FALSE, warning=FALSE}
 data_clean <- tibble()
-Nsubs <- unique(data$nsub)
-Conds <- unique(data$condicion)
-for (N in Nsubs){
+Nsubs <- unique(data_1k_DR$nsub)
+Conds <- unique(data_1k_DR$condicion)
+for (N in Nsubs[!Nsubs %in% c(1,18,55) & Nsubs>28 ]){
   for (C in Conds){
-  data_N <- data %>% filter(nsub==N, condicion==C)
-  outliers_N <- outliers_mcd(x=cbind(data_N$dist_log,data_N$resp_log))
+  data_N <- data_1k_DR %>% filter(nsub==N, condicion==C)
+
+  outliers_N <- outliers_mcd(x = cbind(data_N$dist_log,data_N$resp_log))
   outliers_list <- outliers_N$outliers_val
 
     # Eliminar outliers multivariados!
@@ -231,11 +232,9 @@ Then we eliminate from the table the subjects without an observation for each co
 ```{r}
 slope_1k_WW <- data_slopes %>% filter(freq=="1k", condicion=="WW")
 slope_1k_LL <- data_slopes %>% filter(freq=="1k", condicion=="LL")
-slope_1k_HH <- data_slopes %>% filter(freq=="1k", condicion=="HH")
+slope_1k_WL <- data_slopes %>% filter(freq=="1k", condicion=="WL")
+slope_1k_LW <- data_slopes %>% filter(freq=="1k", condicion=="LW")
 
-slope_4k_WW <- data_slopes %>% filter(freq=="4k", condicion=="WW")
-slope_4k_LL <- data_slopes %>% filter(freq=="4k", condicion=="LL")
-slope_4k_HH <- data_slopes %>% filter(freq=="4k", condicion=="HH")
 
 # 1k
 outliers <-outliers_mad(slope_1k_WW$slope)
@@ -246,30 +245,22 @@ outliers <-outliers_mad(slope_1k_LL$slope)
 #outliers$limits[2]
 slope_1k_LL<- slope_1k_LL[slope_1k_LL$slope<outliers$limits[2],]
 
-outliers <-outliers_mad(slope_1k_HH$slope)
+outliers <-outliers_mad(slope_1k_WL$slope)
 #outliers$limits[2]
-slope_1k_HH<- slope_1k_HH[slope_1k_HH$slope<outliers$limits[2],]
+slope_1k_WL<- slope_1k_WL[slope_1k_WL$slope<outliers$limits[2],]
 
-# 4k
-outliers <-outliers_mad(slope_4k_WW$slope)
+outliers <-outliers_mad(slope_1k_LW$slope)
 #outliers$limits[2]
-slope_4k_WW<- slope_4k_WW[slope_4k_WW$slope<outliers$limits[2],]
+slope_1k_LW<- slope_1k_LW[slope_1k_LW$slope<outliers$limits[2],]
 
-outliers <-outliers_mad(slope_4k_LL$slope)
-#outliers$limits[2]
-slope_4k_LL<- slope_4k_LL[slope_4k_LL$slope<outliers$limits[2],]
 
-outliers <-outliers_mad(slope_4k_HH$slope)
-#outliers$limits[2]
-slope_4k_HH<- slope_4k_HH[slope_4k_HH$slope<outliers$limits[2],]
-
-data_slopes_clean <- (rbind(slope_1k_HH,slope_1k_LL,slope_1k_WW,
-                            slope_4k_HH,slope_4k_LL,slope_4k_WW))
+data_slopes_clean <- (rbind(slope_1k_LL,slope_1k_WW,
+                            slope_1k_LW,slope_1k_WL))
 
 count_conditions <- data_slopes_clean %>% 
   group_by(nsub) %>% 
   summarise(n = n())
-drops <- count_conditions %>% subset(n!=3)
+drops <- count_conditions %>% subset(n!=4)
 
 data_slopes_clean <- data_slopes_clean[!(data_slopes_clean$nsub%in%
                                                  drops$nsub), ]
@@ -308,37 +299,21 @@ plt_1k_slope <- ggplot(data_slopes_clean %>%
   stat_boxplot(geom = "errorbar",
                width = 0.25) + 
   geom_boxplot(alpha=0.8, outlier.colour=NA, width = 0.4)+
-  scale_x_discrete(limits = c('WW', 'LL', 'HH'), 
-                   labels = c('Wide Band', 'Low Pass', 'High Pass')) +
-  scale_fill_manual(values = cols, guide='none') +
+  #scale_x_discrete(limits = c('WW', 'LL', 'WL','LW'), 
+  #                 labels = c('Wide Band', 'Low Pass', 'High Pass')) +
+  #scale_fill_manual(values = cols, guide='none') +
   scale_y_continuous(limits=c(0,2)) +
   labs(title="Cut frequency = 1 kHz", y='Slopes')+
-  annotate("text", x = 1.5, y = 1.6,  label = "***", size = 4) +
-  annotate("segment", x = 0.7, xend = 2.2, y = 1.55, 
-           yend = 1.55, colour = "black", size=.3, alpha=1,) +
-  annotate("text", x = 2.5, y = 1.8,  label = "***", size = 4) +
-  annotate("segment", x = 1.75, xend = 3.2, y = 1.75, 
-           yend = 1.75, colour = "black", size=.3, alpha=1,) +
+  #annotate("text", x = 1.5, y = 1.6,  label = "***", size = 4) +
+  #annotate("segment", x = 0.7, xend = 2.2, y = 1.55, 
+  #         yend = 1.55, colour = "black", size=.3, alpha=1,) +
+  #annotate("text", x = 2.5, y = 1.8,  label = "***", size = 4) +
+  #annotate("segment", x = 1.75, xend = 3.2, y = 1.75, 
+  #         yend = 1.75, colour = "black", size=.3, alpha=1,) +
   theme(axis.title.x = element_blank(),
         axis.title.y = element_text(size = 9),
         plot.title = element_text(size = 10, hjust = 0.5))
-
-plt_4k_slope <- ggplot(data_slopes_clean %>% 
-                         filter(freq=="4k" & slope < 1.6), 
-                       aes(x=condicion, y=slope, fill=condicion)) + 
-  stat_boxplot(geom = "errorbar",
-               width = 0.25) + 
-  geom_boxplot(alpha = 0.8, outlier.colour=NA, width = 0.4)+
-  scale_x_discrete(limits = c('WW', 'LL', 'HH'),
-                   labels = c('Wide Band', 'Low Pass', 'High Pass')) +
-  scale_fill_manual(values = cols, guide='none') +
-  scale_y_continuous(limits=c(0,2)) +
-  labs(title="Cut frequency = 4 kHz")+
-  theme(axis.title.x = element_blank(),
-        axis.title.y = element_blank(),
-        plot.title = element_text(size = 10, hjust = 0.5))
-
-ggarrange(plt_1k_slope,plt_4k_slope, common.legend = TRUE)
+plt_1k_slope
 ```
 ### Regressions Plot
 
@@ -407,7 +382,7 @@ This analysis allows to evaluate the variation of slopes between intrasubject co
 ### One way Anova with reapeated measures for Freq=1k
 ```{r 1k_2}
 lmer.1k <- lmer(slope ~ condicion + (1|nsub),
-    data = slopes_1k_clean)
+    data = data_slopes_clean)
 summary(lmer.1k)
 
 anova(lmer.1k)
@@ -422,25 +397,6 @@ emmeans(lmer.1k,
         adjust="bonferroni")
 
 qqnorm(resid(lmer.1k))
-```
-### One way Anova with reapeated measures LMER for Freq=4k
-
-```{r 4k_2}
-lmer.4k <- lmer(slope ~ condicion + (1|nsub),
-    data = slopes_4k_clean)
-
-anova(lmer.4k)
-
-##partial eta sq
-effectsize::eta_squared(lmer.4k, partial = TRUE)
-#Rsq
-r.squaredGLMM(lmer.4k)  
-
-emmeans(lmer.4k, 
-        list(pairwise ~ condicion),
-        adjust="bonferroni")
-
-qqnorm(resid(lmer.4k))
 ```
 
 ## Suplementary Analysis 
