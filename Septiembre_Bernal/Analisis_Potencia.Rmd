@@ -57,7 +57,7 @@ There are 276 .csv files corresponding to each condition/block for each subject.
 - "resp_log" is the subject's response to the stimulus <br>
 - "bloque" is not the actual data of the block order. It will be corrected later.  <br>
 
-```{r Carga Datos, include=FALSE}
+```{r, include=FALSE}
 dir_1k_DR <- "./Data_1k_DR"
 data_1k_DR <- 
     list.files(path=dir_1k_DR, pattern = "*.csv",full.names = TRUE) %>% 
@@ -66,8 +66,6 @@ data_1k_DR <-
 
 rm(dir_1k_DR)
 ```
-
-## Labeling
 
 ```{r}
 # Corregimos la columna de condicion con una etiqueta mas legible
@@ -194,13 +192,14 @@ qqnorm(sresids, main='Normal')
 qqline(sresids)
 
 ```
+
 ### Intrasubject residuals normality test
 
 We performed an analysis of the normality of the intrasubject residuals with the Shapiro.Wilk method. The study compares subjects (nsubs) according to condition, reporting which ones do not allow us to approve the Null Hypothesis (H0) that residuals come from a normal distribution. 
 
 Of all the subjects and conditions evaluated, only 5 do not present a normal distribution in the residuals (6-LW, 13-LW, 19-LL, 22-WL and 39-LW).
 
-```{r Residuos intra-sujeto, warning=FALSE, message=FALSE}
+```{r, warning=FALSE, message=FALSE}
 normality_test <- data_clean %>%
   group_by(nsub, condicion) %>%
   summarise(statistic = shapiro.test(res)$statistic,
@@ -294,7 +293,9 @@ normality_slopes
 We plotted in a boxplot the total slopes per condition, noting the degree of significance in the data.
 
 ```{r, message=FALSE, warning=FALSE}
-cols <- c("#455A64", "#90A4AE", "#CFD8DC", "#676c6e" )
+#cols <- c("#505160", "#68829E", "#AEBD38", "#598234")
+cols <- c("#2E2300", "#6E6702", "#C05805", "#DB9501")
+
 
 plt_1k_slope <- ggplot(data_slopes_clean, 
                        aes(x=condicion, y=slope, fill=condicion)) + 
@@ -335,8 +336,44 @@ plt_1k_slope
 ```
 ### Regressions Plot
 
-```{r echo=FALSE}
-ggplot(data_clean, aes(x=dist_log, y=resp_log, color=condicion)) +
+```{r echo=FALSE, warning=FALSE, message=FALSE}
+ggplot(data_clean %>% filter(nsub < 15), aes(x=dist_log, y=resp_log, color=condicion)) +
+    scale_color_manual(values = cols, labels = c('Wide', 'Low', 'Wide-Low', 'Low-Wide')) +
+  geom_smooth(method = lm, se = FALSE, size=0.5) +
+  facet_wrap(~nsub) +
+    theme(axis.title.x = element_blank(),
+        axis.title.y = element_text(size = 9),
+        plot.title = element_text(size = 10, hjust = 0.5)) +
+  theme_minimal()
+
+ggplot(data_clean %>% filter(nsub > 15 & nsub < 31), aes(x=dist_log, y=resp_log, color=condicion)) +
+    scale_color_manual(values = cols, labels = c('Wide', 'Low', 'Wide-Low', 'Low-Wide')) +
+  geom_smooth(method = lm, se = FALSE, size=0.5) +
+  facet_wrap(~nsub) +
+    theme(axis.title.x = element_blank(),
+        axis.title.y = element_text(size = 9),
+        plot.title = element_text(size = 10, hjust = 0.5)) +
+  theme_minimal()
+
+ggplot(data_clean %>% filter(nsub > 31 & nsub < 44), aes(x=dist_log, y=resp_log, color=condicion)) +
+    scale_color_manual(values = cols, labels = c('Wide', 'Low', 'Wide-Low', 'Low-Wide')) +
+  geom_smooth(method = lm, se = FALSE, size=0.5) +
+  facet_wrap(~nsub) +
+    theme(axis.title.x = element_blank(),
+        axis.title.y = element_text(size = 9),
+        plot.title = element_text(size = 10, hjust = 0.5)) +
+  theme_minimal()
+
+ggplot(data_clean %>% filter(nsub > 44 & nsub < 59), aes(x=dist_log, y=resp_log, color=condicion)) +
+    scale_color_manual(values = cols, labels = c('Wide', 'Low', 'Wide-Low', 'Low-Wide')) +
+  geom_smooth(method = lm, se = FALSE, size=0.5) +
+  facet_wrap(~nsub) +
+    theme(axis.title.x = element_blank(),
+        axis.title.y = element_text(size = 9),
+        plot.title = element_text(size = 10, hjust = 0.5)) +
+  theme_minimal()
+
+ggplot(data_clean %>% filter(nsub > 59 & nsub < 70), aes(x=dist_log, y=resp_log, color=condicion)) +
     scale_color_manual(values = cols, labels = c('Wide', 'Low', 'Wide-Low', 'Low-Wide')) +
   geom_smooth(method = lm, se = FALSE, size=0.5) +
   facet_wrap(~nsub) +
@@ -345,9 +382,10 @@ ggplot(data_clean, aes(x=dist_log, y=resp_log, color=condicion)) +
         plot.title = element_text(size = 10, hjust = 0.5)) +
   theme_minimal()
 ```
+
 ### data_prom tibble with means and std per condition
 
-```{r}
+```{r, warning=FALSE, message=FALSE}
 data_prom <- data_clean %>%
   group_by(condicion, dist_log) %>%
   summarise(dist_log,
@@ -361,12 +399,9 @@ ggplot(data_prom,
            color = condicion)) +
   geom_point() +
   geom_line(linewidth = 0.8) +
-  # scale_color_manual(values = cols,
-  #                   limits = c('WW', 'LL', 'WL', 'LW'), 
-  #                   labels = c('Wide', 'Low', 'Wide-Low', 'Low-Wide')) + 
-  # #geom_smooth(se = FALSE) +
-  # scale_x_log10() +
-  # scale_y_log10() +
+  scale_color_manual(values = cols,
+                    limits = c('WW', 'LL', 'WL', 'LW'),
+                    labels = c('Wide', 'Low', 'Wide-Low', 'Low-Wide')) +
   geom_errorbar(aes(ymin=prom_log-std_log,
                     ymax=prom_log+std_log),
                 width = 0.02) +
