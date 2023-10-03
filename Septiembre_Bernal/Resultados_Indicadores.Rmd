@@ -55,15 +55,119 @@ for (i in 1:4) {
       Datos_Old[[Dato]] <- nueva_nueva
 }
 
+df_list <- list(Centroide_Espectral, DR_Ratio, Intensidad_Binaural,Varianza_Espectral) 
+df_list <- df_list %>% reduce(merge, by=c('Distancia','condicion'))
 
 ```
 
-## Including Plots
+```{r, warning=FALSE, message=FALSE}
 
-You can also embed plots, for example:
+#### Carga de Datos ####
 
-```{r pressure, echo=FALSE}
-plot(pressure)
+setwd('C:/Users/Damian/Documents/GitHub/Experimento_Distancia_LAPSo/Septiembre_Bernal/Indicadores')
+
+# Coeficientes Completos
+
+Dato_1 <- read_csv('Centroide_Espectral.csv')
+Dato_1 <- Dato_1 %>%
+  pivot_longer(cols = c("wide", "low", "low-wide", "wide-low"),
+               names_to = "Condicion",
+               values_to = 'Centroide_Espectral')
+
+Dato_2 <- read_csv('DR_Ratio.csv')
+Dato_2 <- Dato_2 %>% 
+  pivot_longer(cols = c("wide", "low", "low-wide", "wide-low"),
+               names_to = "Condicion",
+               values_to = 'DR_Ratio')
+
+Dato_3 <- read_csv('Intensidad_Binaural.csv')
+Dato_3 <- Dato_3 %>% 
+  pivot_longer(cols = c("wide", "low", "low-wide", "wide-low"),
+               names_to = "Condicion",
+               values_to = 'Intensidad_Binaural')
+
+Dato_4 <- read_csv('Varianza_Espectral.csv')
+Dato_4 <- Dato_4 %>% 
+  pivot_longer(cols = c("wide", "low", "low-wide", "wide-low"),
+               names_to = "Condicion",
+               values_to = 'Varianza_Espectral')
+
+df_list <- list(Dato_1, Dato_2, Dato_3, Dato_4)
+Indicadores <- df_list %>% reduce(merge, by=c('Distancia','Condicion'))
+
+rm(Dato_1, Dato_2, Dato_3, Dato_4, df_list)
+
+```
+
+
+## Grgaficamos
+
+
+```{r}
+
+cols <- c("#2E2300", "#6E6702", "#C05805", "#DB9501")
+
+SC <- ggplot(Indicadores,
+             aes(x=Distancia, y=Centroide_Espectral,
+                 color = Condicion)) +
+  geom_point() +
+  geom_line(linewidth = 0.8) +
+  scale_color_manual(values = cols,
+                    limits = c('wide', 'low', 'wide.low', 'low-wide'),
+                    labels = c('Wide', 'Low', 'Wide-Low', 'Low-Wide')) +
+  # facet_grid(rows = vars(ID)) +
+  labs(title = "Spectral Centroid", x='Distance (m)', y='Frecuency') +
+  theme(axis.title.x = element_text(size = 9),
+        axis.title.y = element_text(size = 9),
+        plot.title = element_text(size = 10, hjust = 0.5))
+
+
+DRR <- ggplot(Indicadores,
+             aes(x=Distancia, y=DR_Ratio,
+                 color = Condicion)) +
+  geom_point() +
+  geom_line(linewidth = 0.8) +
+  scale_color_manual(values = cols,
+                    limits = c('wide', 'low', 'wide.low', 'low-wide'),
+                    labels = c('Wide', 'Low', 'Wide-Low', 'Low-Wide')) +
+  # facet_grid(rows = vars(ID)) +
+  labs(title = "DR Ratio", x='Distance (m)', y='Intensity (dB)') +
+  theme(axis.title.x = element_text(size = 9),
+        axis.title.y = element_text(size = 9),
+        plot.title = element_text(size = 10, hjust = 0.5))
+
+IB <- ggplot(Indicadores,
+             aes(x=Distancia, y=Intensidad_Binaural,
+                 color = Condicion)) +
+  geom_point() +
+  geom_line(linewidth = 0.8) +
+  scale_color_manual(values = cols,
+                    limits = c('wide', 'low', 'wide.low', 'low-wide'),
+                    labels = c('Wide', 'Low', 'Wide-Low', 'Low-Wide')) +
+  # facet_grid(rows = vars(ID)) +
+  labs(title = "Binaural Intensity", x='Distance (m)', y='Intensity (dB)') +
+  theme(axis.title.x = element_text(size = 9),
+        axis.title.y = element_text(size = 9),
+        plot.title = element_text(size = 10, hjust = 0.5))
+
+VE <- ggplot(Indicadores,
+             aes(x=Distancia, y=Varianza_Espectral,
+                 color = Condicion)) +
+  geom_point() +
+  geom_line(linewidth = 0.8) +
+  scale_color_manual(values = cols,
+                    limits = c('wide', 'low', 'wide.low', 'low-wide'),
+                    labels = c('Wide', 'Low', 'Wide-Low', 'Low-Wide')) +
+  # facet_grid(rows = vars(ID)) +
+  labs(title = "Spectral Variance", x='Distance (m)', y='Frecuency (Hz)') +
+  theme(axis.title.x = element_text(size = 9),
+        axis.title.y = element_text(size = 9),
+        plot.title = element_text(size = 10, hjust = 0.5))
+
+library("gridExtra")
+
+cowplot::plot_grid(IB, DRR, SC, VE)
+  
 ```
 
 Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
