@@ -1,0 +1,69 @@
+---
+title: "Resultados e Indicadores"
+author: "Lucas Gonzalez - Damian Payo - Manuel Eguia - Ramiro Vergara"
+date: "2023-10-03"
+output: html_document
+  code_folding: "hide"
+    theme: paper
+    highlight: pygments
+    toc: true
+editor_options: 
+  markdown: 
+    wrap: 72
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(readr)
+library(dplyr)
+library(here)
+library(ggplot2)
+library(plotrix)
+library(segmented)
+library(Routliers)
+library(tidyverse)
+library(ggpubr)
+library(car)
+library(data.table)
+library(lme4)
+library(nlme)
+library(emmeans)
+library(sjstats)
+library(lmerTest)
+library(MuMIn)
+library(nortest)
+```
+
+## Formateo de datos
+
+Tomamos los 4 archivos .csv, los convertimos a formato tiddy para poder graficarlos.
+```{r cars}
+Datos_Old <- list()
+
+Indicador <- c('Centroide_Espectral','DR_Ratio','Intensidad_Binaural','Varianza_Espectral')
+
+Directorio <- "~/GitHub/Experimento_Distancia_LAPSo/Septiembre_Bernal/Indicadores"
+
+for (i in 1:4) {
+  Dato <- Indicador[[i]]
+  file_list <- list.files(path = Directorio,
+                          pattern = paste0(Indicador[[i]],".*\\.csv$"),
+                          full.names = TRUE)
+      nueva_lista <- bind_rows(lapply(file_list, read_csv))
+      nueva_nueva <- t(nueva_lista)
+      Datos_Old[[Dato]] <- nueva_nueva
+}
+
+
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.

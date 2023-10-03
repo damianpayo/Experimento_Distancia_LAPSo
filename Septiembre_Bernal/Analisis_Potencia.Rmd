@@ -288,6 +288,7 @@ normality_slopes <- data_slopes_clean %>%
 
 normality_slopes
 ```
+
 ## Slopes Boxplot
 
 We plotted in a boxplot the total slopes per condition, noting the degree of significance in the data.
@@ -412,6 +413,7 @@ ggplot(data_prom,
         axis.title.y = element_text(size = 9),
         plot.title = element_text(size = 10, hjust = 0.5))
 ```
+
 ## Mixed Design Model
 
 Applying this type of linear mixed-effects model adds the subject (nsub) as a random factor. In other words, a subject-condition interaction is added.
