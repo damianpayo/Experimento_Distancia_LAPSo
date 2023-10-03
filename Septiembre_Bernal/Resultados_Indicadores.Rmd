@@ -87,7 +87,6 @@ SC <- ggplot(Indicadores,
   scale_color_manual(values = cols,
                     limits = c('wide', 'low', 'wide.low', 'low-wide'),
                     labels = c('Wide', 'Low', 'Wide-Low', 'Low-Wide')) +
-  label
   labs(title = "Spectral Centroid", x='Distance (m)', y='Frecuency') +
   theme(axis.title.x = element_text(size = 9),
         axis.title.y = element_text(size = 9),
