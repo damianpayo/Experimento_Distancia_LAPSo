@@ -72,6 +72,11 @@ rm(Dato_1, Dato_2, Dato_3, Dato_4, df_list)
 ```
 
 
+```{r}
+Indicadores$dist_log <- log10(Indicadores$Distancia) 
+
+```
+
 ## Graficamos
 
 
@@ -80,12 +85,12 @@ rm(Dato_1, Dato_2, Dato_3, Dato_4, df_list)
 cols <- c("#2E2300", "#6E6702", "#C05805", "#DB9501")
 
 SC <- ggplot(Indicadores,
-             aes(x=Distancia, y=Centroide_Espectral,
+             aes(x=dist_log, y=Centroide_Espectral,
                  color = Condicion)) +
   geom_point() +
   geom_line(linewidth = 0.8) +
   scale_color_manual(values = cols,
-                    limits = c('wide', 'low', 'wide.low', 'low-wide'),
+                    limits = c('wide', 'low', 'wide-low', 'low-wide'),
                     labels = c('Wide', 'Low', 'Wide-Low', 'Low-Wide')) +
   labs(title = "Spectral Centroid", x='Distance (m)', y='Frecuency') +
   theme(axis.title.x = element_text(size = 9),
@@ -94,12 +99,12 @@ SC <- ggplot(Indicadores,
 
 
 DRR <- ggplot(Indicadores,
-             aes(x=Distancia, y=DR_Ratio,
+             aes(x=dist_log, y=DR_Ratio,
                  color = Condicion)) +
   geom_point() +
   geom_line(linewidth = 0.8) +
   scale_color_manual(values = cols,
-                    limits = c('wide', 'low', 'wide.low', 'low-wide'),
+                    limits = c('wide', 'low', 'wide-low', 'low-wide'),
                     labels = c('Wide', 'Low', 'Wide-Low', 'Low-Wide')) +
   labs(title = "DR Ratio", x='Distance (m)', y='Intensity (dB)') +
   theme(axis.title.x = element_text(size = 9),
@@ -107,12 +112,12 @@ DRR <- ggplot(Indicadores,
         plot.title = element_text(size = 10, hjust = 0.5))
 
 IB <- ggplot(Indicadores,
-             aes(x=Distancia, y=c(Intensidad_Binaural),
+             aes(x=dist_log, y=Intensidad_Binaural,
                  color = Condicion)) +
   geom_point() +
   geom_line(linewidth = 0.8) +
   scale_color_manual(values = cols,
-                    limits = c('wide', 'low', 'wide.low', 'low-wide'),
+                    limits = c('wide', 'low', 'wide-low', 'low-wide'),
                     labels = c('Wide', 'Low', 'Wide-Low', 'Low-Wide')) +
   labs(title = "Binaural Intensity", x='Distance (m)', y='Intensity (dB)') +
   theme(axis.title.x = element_text(size = 9),
@@ -120,12 +125,13 @@ IB <- ggplot(Indicadores,
         plot.title = element_text(size = 10, hjust = 0.5))
 
 VE <- ggplot(Indicadores,
-             aes(x=Distancia, y=Varianza_Espectral,
+             aes(x=dist_log, y=Varianza_Espectral,
                  color = Condicion)) +
   geom_point() +
   geom_line(linewidth = 0.8) +
+  scale_y_log10()+
   scale_color_manual(values = cols,
-                    limits = c('wide', 'low', 'wide.low', 'low-wide'),
+                    limits = c('wide', 'low', 'wide-low', 'low-wide'),
                     labels = c('Wide', 'Low', 'Wide-Low', 'Low-Wide')) +
   labs(title = "Spectral Variance", x='Distance (m)', y='Frecuency (Hz)') +
   theme(axis.title.x = element_text(size = 9),
