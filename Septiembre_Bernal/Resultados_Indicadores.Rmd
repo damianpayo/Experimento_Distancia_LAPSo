@@ -38,56 +38,28 @@ library(nortest)
 ## Formateo de datos
 
 Tomamos los 4 archivos .csv, los convertimos a formato tiddy para poder graficarlos.
-```{r cars}
-Datos_Old <- list()
-
-Indicador <- c('Centroide_Espectral','DR_Ratio','Intensidad_Binaural','Varianza_Espectral')
-
-Directorio <- "~/GitHub/Experimento_Distancia_LAPSo/Septiembre_Bernal/Indicadores"
-
-for (i in 1:4) {
-  Dato <- Indicador[[i]]
-  file_list <- list.files(path = Directorio,
-                          pattern = paste0(Indicador[[i]],".*\\.csv$"),
-                          full.names = TRUE)
-      nueva_lista <- bind_rows(lapply(file_list, read_csv))
-      nueva_nueva <- t(nueva_lista)
-      Datos_Old[[Dato]] <- nueva_nueva
-}
-
-df_list <- list(Centroide_Espectral, DR_Ratio, Intensidad_Binaural,Varianza_Espectral) 
-df_list <- df_list %>% reduce(merge, by=c('Distancia','condicion'))
-
-```
 
 ```{r, warning=FALSE, message=FALSE}
 
 #### Carga de Datos ####
-
-setwd('C:/Users/Damian/Documents/GitHub/Experimento_Distancia_LAPSo/Septiembre_Bernal/Indicadores')
-
 # Coeficientes Completos
 
-Dato_1 <- read_csv('Centroide_Espectral.csv')
-Dato_1 <- Dato_1 %>%
+Dato_1 <- read_csv('./Indicadores/Centroide_Espectral.csv') %>%
   pivot_longer(cols = c("wide", "low", "low-wide", "wide-low"),
                names_to = "Condicion",
                values_to = 'Centroide_Espectral')
 
-Dato_2 <- read_csv('DR_Ratio.csv')
-Dato_2 <- Dato_2 %>% 
+Dato_2 <- read_csv('./Indicadores/DR_Ratio.csv')%>% 
   pivot_longer(cols = c("wide", "low", "low-wide", "wide-low"),
                names_to = "Condicion",
                values_to = 'DR_Ratio')
 
-Dato_3 <- read_csv('Intensidad_Binaural.csv')
-Dato_3 <- Dato_3 %>% 
+Dato_3 <- read_csv('./Indicadores/Intensidad_Binaural.csv') %>% 
   pivot_longer(cols = c("wide", "low", "low-wide", "wide-low"),
                names_to = "Condicion",
                values_to = 'Intensidad_Binaural')
 
-Dato_4 <- read_csv('Varianza_Espectral.csv')
-Dato_4 <- Dato_4 %>% 
+Dato_4 <- read_csv('./Indicadores/Varianza_Espectral.csv') %>% 
   pivot_longer(cols = c("wide", "low", "low-wide", "wide-low"),
                names_to = "Condicion",
                values_to = 'Varianza_Espectral')
@@ -100,7 +72,7 @@ rm(Dato_1, Dato_2, Dato_3, Dato_4, df_list)
 ```
 
 
-## Grgaficamos
+## Graficamos
 
 
 ```{r}
@@ -115,7 +87,7 @@ SC <- ggplot(Indicadores,
   scale_color_manual(values = cols,
                     limits = c('wide', 'low', 'wide.low', 'low-wide'),
                     labels = c('Wide', 'Low', 'Wide-Low', 'Low-Wide')) +
-  # facet_grid(rows = vars(ID)) +
+  label
   labs(title = "Spectral Centroid", x='Distance (m)', y='Frecuency') +
   theme(axis.title.x = element_text(size = 9),
         axis.title.y = element_text(size = 9),
@@ -130,21 +102,19 @@ DRR <- ggplot(Indicadores,
   scale_color_manual(values = cols,
                     limits = c('wide', 'low', 'wide.low', 'low-wide'),
                     labels = c('Wide', 'Low', 'Wide-Low', 'Low-Wide')) +
-  # facet_grid(rows = vars(ID)) +
   labs(title = "DR Ratio", x='Distance (m)', y='Intensity (dB)') +
   theme(axis.title.x = element_text(size = 9),
         axis.title.y = element_text(size = 9),
         plot.title = element_text(size = 10, hjust = 0.5))
 
 IB <- ggplot(Indicadores,
-             aes(x=Distancia, y=Intensidad_Binaural,
+             aes(x=Distancia, y=c(Intensidad_Binaural),
                  color = Condicion)) +
   geom_point() +
   geom_line(linewidth = 0.8) +
   scale_color_manual(values = cols,
                     limits = c('wide', 'low', 'wide.low', 'low-wide'),
                     labels = c('Wide', 'Low', 'Wide-Low', 'Low-Wide')) +
-  # facet_grid(rows = vars(ID)) +
   labs(title = "Binaural Intensity", x='Distance (m)', y='Intensity (dB)') +
   theme(axis.title.x = element_text(size = 9),
         axis.title.y = element_text(size = 9),
@@ -158,16 +128,12 @@ VE <- ggplot(Indicadores,
   scale_color_manual(values = cols,
                     limits = c('wide', 'low', 'wide.low', 'low-wide'),
                     labels = c('Wide', 'Low', 'Wide-Low', 'Low-Wide')) +
-  # facet_grid(rows = vars(ID)) +
   labs(title = "Spectral Variance", x='Distance (m)', y='Frecuency (Hz)') +
   theme(axis.title.x = element_text(size = 9),
         axis.title.y = element_text(size = 9),
         plot.title = element_text(size = 10, hjust = 0.5))
 
-library("gridExtra")
-
-cowplot::plot_grid(IB, DRR, SC, VE)
-  
+ggpubr::ggarrange(IB, DRR, SC, VE, common.legend = TRUE, legend="bottom")
 ```
 
 Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
