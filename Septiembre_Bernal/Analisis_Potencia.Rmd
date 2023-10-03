@@ -334,6 +334,7 @@ plt_1k_slope <- ggplot(data_slopes_clean,
         plot.title = element_text(size = 10, hjust = 0.5))
 plt_1k_slope
 ```
+
 ### Regressions Plot
 
 ```{r echo=FALSE, warning=FALSE, message=FALSE}
