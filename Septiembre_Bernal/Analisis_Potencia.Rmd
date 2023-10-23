@@ -84,6 +84,17 @@ data_1k_DR <- data_1k_DR[, !names(data_1k_DR) %in% c("bloque","altura")]
 rm(orden_bloques)
 ```
 
+## Subject dismissal
+
+Before the evaluation, subjects were asked to complete a form with demographic information. 
+  -Subject 4 expressed hearing impairment in one ear.
+  -Subjetcs 56 and 69 expressed tinitus. 
+  -Subject 55 missed the Non-Filtered  block (Wide or WW). 
+We decided to exclude there data from the analysis.
+
+```{r, message=FALSE,error=FALSE,warning=FALSE,include=FALSE}
+data_1k_DR <- data_1k_DR[!(data_1k_DR$nsub %in% c(4,55,56,69)), ]
+```
 ## Log-Log Distance-Responses
 
 We apply logarithms to the response and distance observations in order to make linear regressions between the variables and obtain a slope indicating distance compression
@@ -118,11 +129,11 @@ We eliminated 1959 observations from the total of 9915 with this method.
 data_clean <- tibble()
 Nsubs <- unique(data_1k_DR$nsub)
 Conds <- unique(data_1k_DR$condicion)
-for (N in Nsubs[!Nsubs %in% c(1,18,55)]){
+for (N in Nsubs){
   for (C in Conds){
   data_N <- data_1k_DR %>% filter(nsub==N, condicion==C)
 
-  outliers_N <- outliers_mcd(x = cbind(data_N$dist_log,data_N$resp_log))
+  outliers_N <- outliers_mcd(x = cbind(data_N$dist_log,data_N$resp_log), alpha = .01, h=0.75)
   outliers_list <- outliers_N$outliers_val
 
 # Eliminar outliers multivariados!
@@ -170,15 +181,6 @@ data_slopes <- data_slopes %>%
   summarise(nsub, condicion, orden_bloque, slope, intercept, freq) %>%
   unique()
 
-```
-
-## Subject dismissal
-
-Before the evaluation, subjects were asked to complete a form with demographic information. Subject number 4 expressed hearing impairment in one ear and subjetcs number 56 and 69 expressed tinitus. So we decided to exclude there data from the analysis.
-
-```{r, message=FALSE,error=FALSE,warning=FALSE,include=FALSE}
-data_clean <- data_clean[!(data_clean$nsub %in% c(4,56,69)), ]
-data_slopes <- data_slopes[!(data_slopes$nsub %in% c(4,56,69)), ]
 ```
 
 ### Observation of normality in residuals
