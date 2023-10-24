@@ -92,9 +92,6 @@ data_1k_DR <- data_1k_DR[!(data_1k_DR$nsub %in% c(4,55,56,69)), ]
 
 We applied the *Minimum Covariance Determinant* criteria to detect multivariate outliers.
 
-Before that, we eliminate 3 subjects due to the responses being incomplete.
-
-We eliminated 1959 observations from the total of 9915 with this method.
 
 ```{r, echo=FALSE, warning=FALSE, error=FALSE, include=FALSE}
 dt_1_6 <- tibble()
@@ -316,7 +313,7 @@ plt_1k_slope <- ggplot(dt_sl_1_6,
                     limits = c('WW', 'LL', 'WL', 'LW'), 
                     labels = c('Wide', 'Low', 'Wide-Low', 'Low-Wide'),
                     guide = guide_none()) + 
-  scale_y_continuous(limits=c(0, 1.84)) +
+  scale_y_continuous(limits=c(-.5, 1.84)) +
   scale_x_discrete(limits = c('WW', 'LL', 'WL', 'LW')) +
   labs(title="Slopes per condition", y='Slopes', x='Condition')+
  # WW- LW
@@ -344,6 +341,55 @@ plt_1k_slope <- ggplot(dt_sl_1_6,
         plot.title = element_text(size = 10, hjust = 0.5))
 plt_1k_slope
 ```
+```{r echo=FALSE, warning=FALSE, message=FALSE}
+ggplot(dt_1_6 %>% filter(nsub < 15), aes(x=dist_log, y=resp_log, color=condicion)) +
+    scale_color_manual(values = cols, labels = c('Wide', 'Low', 'Wide-Low', 'Low-Wide')) +
+  geom_smooth(method = lm, se = FALSE, size=0.5) +
+  facet_wrap(~nsub) +
+    theme(axis.title.x = element_blank(),
+        axis.title.y = element_text(size = 9),
+        plot.title = element_text(size = 10, hjust = 0.5)) +
+  theme_minimal()
+
+ggplot(dt_1_6 %>% filter(nsub > 15 & nsub < 31), aes(x=dist_log, y=resp_log, color=condicion)) +
+    scale_color_manual(values = cols, labels = c('Wide', 'Low', 'Wide-Low', 'Low-Wide')) +
+  geom_smooth(method = lm, se = FALSE, size=0.5) +
+  facet_wrap(~nsub) +
+    theme(axis.title.x = element_blank(),
+        axis.title.y = element_text(size = 9),
+        plot.title = element_text(size = 10, hjust = 0.5)) +
+  theme_minimal()
+
+ggplot(dt_1_6 %>% filter(nsub > 31 & nsub < 44), aes(x=dist_log, y=resp_log, color=condicion)) +
+    scale_color_manual(values = cols, labels = c('Wide', 'Low', 'Wide-Low', 'Low-Wide')) +
+  geom_smooth(method = lm, se = FALSE, size=0.5) +
+  facet_wrap(~nsub) +
+    theme(axis.title.x = element_blank(),
+        axis.title.y = element_text(size = 9),
+        plot.title = element_text(size = 10, hjust = 0.5)) +
+  theme_minimal()
+
+ggplot(dt_1_6 %>% filter(nsub > 44 & nsub < 59), aes(x=dist_log, y=resp_log, color=condicion)) +
+    scale_color_manual(values = cols, labels = c('Wide', 'Low', 'Wide-Low', 'Low-Wide')) +
+  geom_smooth(method = lm, se = FALSE, size=0.5) +
+  facet_wrap(~nsub) +
+    theme(axis.title.x = element_blank(),
+        axis.title.y = element_text(size = 9),
+        plot.title = element_text(size = 10, hjust = 0.5)) +
+  theme_minimal()
+
+ggplot(dt_1_6 %>% filter(nsub > 59 & nsub < 70), aes(x=dist_log, y=resp_log, color=condicion)) +
+    scale_color_manual(values = cols, labels = c('Wide', 'Low', 'Wide-Low', 'Low-Wide')) +
+  geom_smooth(method = lm, se = FALSE, size=0.5) +
+  facet_wrap(~nsub) +
+    theme(axis.title.x = element_blank(),
+        axis.title.y = element_text(size = 9),
+        plot.title = element_text(size = 10, hjust = 0.5)) +
+  theme_minimal()
+```
+
+
+
 ## 7-12 Boxplot
 ```{r, message=FALSE, warning=FALSE}
 #cols <- c("#505160", "#68829E", "#AEBD38", "#598234")
@@ -359,7 +405,7 @@ plt_1k_slope <- ggplot(dt_sl_7_12,
                     limits = c('WW', 'LL', 'WL', 'LW'), 
                     labels = c('Wide', 'Low', 'Wide-Low', 'Low-Wide'),
                     guide = guide_none()) + 
-  scale_y_continuous(limits=c(0, 1.84)) +
+  scale_y_continuous(limits=c(-.5, 1.84)) +
   scale_x_discrete(limits = c('WW', 'LL', 'WL', 'LW')) +
   labs(title="Slopes per condition", y='Slopes', x='Condition')+
  # WW- LW
@@ -386,6 +432,53 @@ plt_1k_slope <- ggplot(dt_sl_7_12,
         axis.title.y = element_text(size = 9),
         plot.title = element_text(size = 10, hjust = 0.5))
 plt_1k_slope
+```
+
+```{r echo=FALSE, warning=FALSE, message=FALSE}
+ggplot(dt_7_12 %>% filter(nsub < 15), aes(x=dist_log, y=resp_log, color=condicion)) +
+    scale_color_manual(values = cols, labels = c('Wide', 'Low', 'Wide-Low', 'Low-Wide')) +
+  geom_smooth(method = lm, se = FALSE, size=0.5) +
+  facet_wrap(~nsub) +
+    theme(axis.title.x = element_blank(),
+        axis.title.y = element_text(size = 9),
+        plot.title = element_text(size = 10, hjust = 0.5)) +
+  theme_minimal()
+
+ggplot(dt_7_12 %>% filter(nsub > 15 & nsub < 31), aes(x=dist_log, y=resp_log, color=condicion)) +
+    scale_color_manual(values = cols, labels = c('Wide', 'Low', 'Wide-Low', 'Low-Wide')) +
+  geom_smooth(method = lm, se = FALSE, size=0.5) +
+  facet_wrap(~nsub) +
+    theme(axis.title.x = element_blank(),
+        axis.title.y = element_text(size = 9),
+        plot.title = element_text(size = 10, hjust = 0.5)) +
+  theme_minimal()
+
+ggplot(dt_7_12 %>% filter(nsub > 31 & nsub < 44), aes(x=dist_log, y=resp_log, color=condicion)) +
+    scale_color_manual(values = cols, labels = c('Wide', 'Low', 'Wide-Low', 'Low-Wide')) +
+  geom_smooth(method = lm, se = FALSE, size=0.5) +
+  facet_wrap(~nsub) +
+    theme(axis.title.x = element_blank(),
+        axis.title.y = element_text(size = 9),
+        plot.title = element_text(size = 10, hjust = 0.5)) +
+  theme_minimal()
+
+ggplot(dt_7_12 %>% filter(nsub > 44 & nsub < 59), aes(x=dist_log, y=resp_log, color=condicion)) +
+    scale_color_manual(values = cols, labels = c('Wide', 'Low', 'Wide-Low', 'Low-Wide')) +
+  geom_smooth(method = lm, se = FALSE, size=0.5) +
+  facet_wrap(~nsub) +
+    theme(axis.title.x = element_blank(),
+        axis.title.y = element_text(size = 9),
+        plot.title = element_text(size = 10, hjust = 0.5)) +
+  theme_minimal()
+
+ggplot(dt_7_12 %>% filter(nsub > 59 & nsub < 70), aes(x=dist_log, y=resp_log, color=condicion)) +
+    scale_color_manual(values = cols, labels = c('Wide', 'Low', 'Wide-Low', 'Low-Wide')) +
+  geom_smooth(method = lm, se = FALSE, size=0.5) +
+  facet_wrap(~nsub) +
+    theme(axis.title.x = element_blank(),
+        axis.title.y = element_text(size = 9),
+        plot.title = element_text(size = 10, hjust = 0.5)) +
+  theme_minimal()
 ```
 
 

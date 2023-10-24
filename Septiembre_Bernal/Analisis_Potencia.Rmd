@@ -309,7 +309,7 @@ plt_1k_slope <- ggplot(data_slopes_clean,
                     limits = c('WW', 'LL', 'WL', 'LW'), 
                     labels = c('Wide', 'Low', 'Wide-Low', 'Low-Wide'),
                     guide = guide_none()) + 
-  scale_y_continuous(limits=c(0, 1.84)) +
+  scale_y_continuous(limits=c(-.5, 1.84)) +
   scale_x_discrete(limits = c('WW', 'LL', 'WL', 'LW')) +
   labs(title="Slopes per condition", y='Slopes', x='Condition')+
  # WW- LW

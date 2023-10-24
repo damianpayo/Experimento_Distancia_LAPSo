@@ -115,7 +115,7 @@ data$resp_log <- log10(data$respuesta)
 
 We applied the *Minimum Covariance Determinant* criteria to detect multivariate outliers.
 
-We eliminated 938 observations from the total of 4968 with this method.
+We eliminated 421 observations from the total of 4968 with this method.
 
 ```{r, echo=FALSE, warning=FALSE}
 data_clean <- tibble()
@@ -124,7 +124,8 @@ Conds <- unique(data$condicion)
 for (N in Nsubs){
   for (C in Conds){
   data_N <- data %>% filter(nsub==N, condicion==C)
-  outliers_N <- outliers_mcd(x=cbind(data_N$dist_log,data_N$resp_log))
+  outliers_N <- outliers_mcd(x=cbind(data_N$dist_log,data_N$resp_log),
+                             alpha=.01, h=.75)
   outliers_list <- outliers_N$outliers_val
 
     # Eliminar outliers multivariados!
@@ -368,40 +369,70 @@ ggplot(data_clean %>% filter(freq == '4k'), aes(x=dist_log, y=resp_log, color=co
         plot.title = element_text(size = 10, hjust = 0.5)) +
   theme_minimal()
 ```
-### FALTA data_prom tibble with means and std per condition
+### 1K Data_prom tibble with means and std per condition
 
-```{r, include=FALSE}
-data_prom <- data_clean %>%
-  group_by(condicion, dist_log, freq) %>%
-  summarise(condicion,
-            distancia,
-            respuesta,
-            prom_lin = mean(respuesta), 
-            sd_lin = sd(respuesta), 
-            std_lin = std.error(respuesta),
-            dist_log,
+```{r}
+cols <- c("#455A64", "#90A4AE", "#CFD8DC" )
+data_prom <- data_clean %>% filter(freq == '1k') %>%
+  group_by(condicion, dist_log) %>%
+  summarise(dist_log,
             resp_log,
             prom_log = mean(resp_log), 
             sd_log = sd(resp_log), 
-            std_log = std.error(resp_log),
-            freq)
+            std_log = std.error(resp_log))
 
-G_Prom <- ggplot(data_prom,
-                 aes(x=distancia, y=prom_lin,
-                     color = condicion)) +
+ggplot(data_prom,
+       aes(x=dist_log, y=prom_log,
+           color = condicion)) +
   geom_point() +
-  geom_smooth(se = FALSE) +
-  # scale_x_log10() +
-  # scale_y_log10() +
-  geom_errorbar(aes(ymin=prom_lin-std_lin,
-                    ymax=prom_lin+std_lin),
-                width = 0.2) +
+  geom_line(linewidth = 0.8) +
+  scale_color_manual(values = cols,
+                    limits = c('WW', 'LL', 'HH'),
+                    labels = c('Wide', 'Low', 'High')) +
+  geom_errorbar(aes(ymin=prom_log-std_log,
+                    ymax=prom_log+std_log),
+                width = 0.02) +
   # facet_grid(rows = vars(ID)) +
-  labs(title = paste0("Promedio y Barras de Error")) +
-  theme_minimal()
+  labs(title = "Average responses", x='Distance (log scale)', y='responses (log scale)') +
+  theme(axis.title.x = element_text(size = 9),
+        axis.title.y = element_text(size = 9),
+        plot.title = element_text(size = 10, hjust = 0.5))
 
-G_Prom
+
 ```
+
+### 4K Data_prom tibble with means and std per condition
+
+```{r}
+cols <- c("#455A64", "#90A4AE", "#CFD8DC" )
+data_prom <- data_clean %>% filter(freq == '4k') %>%
+  group_by(condicion, dist_log) %>%
+  summarise(dist_log,
+            resp_log,
+            prom_log = mean(resp_log), 
+            sd_log = sd(resp_log), 
+            std_log = std.error(resp_log))
+
+ggplot(data_prom,
+       aes(x=dist_log, y=prom_log,
+           color = condicion)) +
+  geom_point() +
+  geom_line(linewidth = 0.8) +
+  scale_color_manual(values = cols,
+                    limits = c('WW', 'LL', 'HH'),
+                    labels = c('Wide', 'Low', 'High')) +
+  geom_errorbar(aes(ymin=prom_log-std_log,
+                    ymax=prom_log+std_log),
+                width = 0.02) +
+  # facet_grid(rows = vars(ID)) +
+  labs(title = "Average responses", x='Distance (log scale)', y='responses (log scale)') +
+  theme(axis.title.x = element_text(size = 9),
+        axis.title.y = element_text(size = 9),
+        plot.title = element_text(size = 10, hjust = 0.5))
+
+
+```
+
 ## Mixed Design Model
 
 Applying this type of linear mixed-effects model adds the subject (nsub) as a random factor. In other words, a subject-condition interaction is added.
@@ -414,7 +445,7 @@ This analysis allows to evaluate the variation of slopes between intrasubject co
 ### One way Anova with reapeated measures for Freq=1k
 ```{r 1k_2}
 lmer.1k <- lmer(slope ~ condicion + (1|nsub),
-    data = slopes_1k_clean)
+    data = data_slopes_clean %>% filter(freq=="1k"))
 summary(lmer.1k)
 
 anova(lmer.1k)
@@ -434,7 +465,7 @@ qqnorm(resid(lmer.1k))
 
 ```{r 4k_2}
 lmer.4k <- lmer(slope ~ condicion + (1|nsub),
-    data = slopes_4k_clean)
+    data = data_slopes_clean %>% filter(freq=="4k"))
 
 anova(lmer.4k)
 
