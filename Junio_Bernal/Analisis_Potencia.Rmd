@@ -21,7 +21,7 @@ library(dplyr)
 library(here)
 library(ggplot2)
 library(plotrix)
-library(segmented)
+#library(segmented)
 library(Routliers)
 library(tidyverse)
 library(ggpubr)
@@ -33,7 +33,7 @@ library(emmeans)
 library(sjstats)
 library(lmerTest)
 library(MuMIn)
-library(nortest)
+#library(nortest)
 ```
 ## Abstract
 
@@ -90,6 +90,14 @@ data <- data[, !names(data) %in% c("bloque","altura")]
 
 rm(orden_bloques)
 ```
+## Subject dismissal
+
+Before the evaluation, subjects were asked to complete a form with demographic information. Subject number 3 expressed hearing impairment in one ear, so we decided to exclude his data from the analysis.
+
+```{r, message=FALSE,error=FALSE,warning=FALSE,include=FALSE}
+data <- data[!(data$nsub==3), ]
+```
+
 ## Log-Log Distance-Responses
 
 We apply logarithms to the response and distance observations in order to make linear regressions between the variables and obtain a slope indicating distance compression
@@ -115,7 +123,7 @@ data$resp_log <- log10(data$respuesta)
 
 We applied the *Minimum Covariance Determinant* criteria to detect multivariate outliers.
 
-We eliminated 421 observations from the total of 4968 with this method.
+We eliminated 408 observations from the total of 4860 with this method.
 
 ```{r, echo=FALSE, warning=FALSE}
 data_clean <- tibble()
@@ -173,14 +181,6 @@ data_slopes <- data_slopes %>%
   unique()
 
 ```
-## Subject dismissal
-
-Before the evaluation, subjects were asked to complete a form with demographic information. Subject number 3 expressed hearing impairment in one ear, so we decided to exclude his data from the analysis.
-
-```{r, message=FALSE,error=FALSE,warning=FALSE,include=FALSE}
-data_clean <- data_clean[!(data_clean$nsub==3), ]
-data_slopes <- data_slopes[!(data_slopes$nsub==3), ]
-```
 
 ### Observation of normality in residuals
 
@@ -222,11 +222,11 @@ ggplot(data_clean, aes(x=res, fill=condicion))+
   #label_value(labels= c('Wide Band', 'Low Pass', 'High Pass'))+
   theme_minimal()
 
-ggplot(data_clean, aes(x=dist_log, y=res, color=condicion))+
-  geom_point()+
-  geom_hline(yintercept = 0)+
-  facet_wrap(~freq+condicion)+
-  theme_minimal()
+#ggplot(data_clean, aes(x=dist_log, y=res, color=condicion))+
+#  geom_point()+
+#  geom_hline(yintercept = 0)+
+#  facet_wrap(~freq+condicion)+
+#  theme_minimal()
 
 ```
 
@@ -371,7 +371,7 @@ ggplot(data_clean %>% filter(freq == '4k'), aes(x=dist_log, y=resp_log, color=co
 ```
 ### 1K Data_prom tibble with means and std per condition
 
-```{r}
+```{r, warning=FALSE}
 cols <- c("#455A64", "#90A4AE", "#CFD8DC" )
 data_prom <- data_clean %>% filter(freq == '1k') %>%
   group_by(condicion, dist_log) %>%
@@ -393,7 +393,7 @@ ggplot(data_prom,
                     ymax=prom_log+std_log),
                 width = 0.02) +
   # facet_grid(rows = vars(ID)) +
-  labs(title = "Average responses", x='Distance (log scale)', y='responses (log scale)') +
+  labs(title = "1k Average responses", x='Distance (log scale)', y='responses (log scale)') +
   theme(axis.title.x = element_text(size = 9),
         axis.title.y = element_text(size = 9),
         plot.title = element_text(size = 10, hjust = 0.5))
@@ -403,7 +403,7 @@ ggplot(data_prom,
 
 ### 4K Data_prom tibble with means and std per condition
 
-```{r}
+```{r, warning=FALSE}
 cols <- c("#455A64", "#90A4AE", "#CFD8DC" )
 data_prom <- data_clean %>% filter(freq == '4k') %>%
   group_by(condicion, dist_log) %>%
@@ -425,7 +425,7 @@ ggplot(data_prom,
                     ymax=prom_log+std_log),
                 width = 0.02) +
   # facet_grid(rows = vars(ID)) +
-  labs(title = "Average responses", x='Distance (log scale)', y='responses (log scale)') +
+  labs(title = "4k Average responses", x='Distance (log scale)', y='responses (log scale)') +
   theme(axis.title.x = element_text(size = 9),
         axis.title.y = element_text(size = 9),
         plot.title = element_text(size = 10, hjust = 0.5))
@@ -461,6 +461,7 @@ emmeans(lmer.1k,
 
 qqnorm(resid(lmer.1k))
 ```
+
 ### One way Anova with reapeated measures LMER for Freq=4k
 
 ```{r 4k_2}
@@ -504,6 +505,7 @@ anova(lm.1k)
 pairwise.t.test(slopes_1k_clean$slope,
                 slopes_1k_clean$condicion,
                 p.adjust.method = "bonferroni")
+#rm(slopes_1k_clean)
 ```
 
 ```{r 4k_1}
@@ -518,6 +520,7 @@ anova(lm_4k)
 pairwise.t.test(slopes_4k_clean$slope,
                 slopes_4k_clean$condicion, 
                 p.adjust.method = "bonferroni")
+#rm(slopes_4k_clean)
 ```
 
 
@@ -563,9 +566,6 @@ ggarrange(plt_1k_per_block,plt_4k_per_block, common.legend = TRUE)
 # interaction between "Order" and "condicion"
 model_lmer_1k <- lmer(slope ~ condicion*as.factor(orden_bloque) + (1|nsub),
                    data = slopes_1k_clean)
-
-modelo <- lm()
-
 # Get the summary of the model
 summary(model_lmer_1k)
 
@@ -607,21 +607,3 @@ emmeans(model_lmer_4k,
 ### Conclusión sobre agregar un factor de orden
 
 Si bien este tipo de test no nos permite sacar una conclusión clara sobre si el orden de los bloques afecta, este no encuentra un efecto significativo en el factor tanto para el filtro con corte en 1k como en 4k.
-
-### Modelo mixto agregando predictores 
-
-(sugerencia de nacho luego de una corrección que le hicieron en un trabajo)
-
-Este modelo es el siguiente:
-
-```{r}
-data_clean_1k <- data_clean %>% filter(freq=="4k")
-lmer2.1k <- lmer(respuesta ~ condicion*distancia + (1|nsub), data=data_clean_1k)
-summary(lmer2.1k)
-
-anova(lmer2.1k)
-
-emmeans(lmer2.1k,
-        list(pairwise ~ condicion*distancia),
-        adjust="bonferroni")
-```
