@@ -141,4 +141,48 @@ VE <- ggplot(Indicadores,
 ggpubr::ggarrange(IB, DRR, SC, VE, common.legend = TRUE, legend="bottom")
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+# Armado de tibble con sujetos + indicadores
+
+Requiere correr "Analisis_Potencia.Rmd" en el mismo environment.
+
+## Corregimos
+```{r}
+# Igualo nombres de columna
+Indicadores <- rename(Indicadores,
+                      distancia = Distancia,
+                      condicion = Condicion)
+
+Indicadores$condicion[Indicadores$condicion=="wide"] <- "WW"
+Indicadores$condicion[Indicadores$condicion=="low"] <- "LL"
+Indicadores$condicion[Indicadores$condicion=="low-wide"] <- "LW"
+Indicadores$condicion[Indicadores$condicion=="wide-low"] <- "WL"
+
+data_e_indicadores <- merge(x=Indicadores,y=data_clean,
+                             by=c("condicion","distancia","dist_log"))
+```
+
+# Análisis Centroide_Espectral * DR_Ratio *
+  Intensidad_Binaural * Varianza_Espectral
+
+```{r}
+lmer.indicadores <- lmer(resp_log ~ dist_log * condicion + 
+                           (Varianza_Espectral:condicion) + (1|nsub),
+    data = data_e_indicadores)
+
+summary(lmer.indicadores)
+
+anova(lmer.indicadores)
+```
+```{r}
+##partial eta sq
+#effectsize::eta_squared(lmer.indicadores, partial = TRUE)
+#Rsq
+#r.squaredGLMM(lmer.indicadores)  
+
+emmeans(lmer.indicadores, 
+        list(pairwise ~ condicion),
+        adjust="bonferroni")
+
+qqnorm(resid(lmer.indicadores))
+```

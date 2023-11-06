@@ -315,7 +315,51 @@ plt_1k_slope <- ggplot(dt_sl_1_6,
                     guide = guide_none()) + 
   scale_y_continuous(limits=c(-.5, 1.84)) +
   scale_x_discrete(limits = c('WW', 'LL', 'WL', 'LW')) +
-  labs(title="Slopes per condition", y='Slopes', x='Condition')+
+  labs(title="1-6 Slopes per condition", y='Slopes', x='Condition')+
+ # # WW- LW
+ #  annotate("text", x = 2.5, y = 1.83,  label = "***", size = 4) +
+ #  annotate("segment", x = 0.7, xend = 4.2, y = 1.8, 
+ #            yend = 1.8, colour = "black", size=.2, alpha=1,) +
+ #  # LL - LW
+ #  annotate("text", x = 3, y = 1.73,  label = "***", size = 4) +
+ #  annotate("segment", x = 1.75, xend = 4.2, y = 1.7, 
+ #            yend = 1.7, colour = "black", size=.2, alpha=1,) +
+ #  # WW- WL
+ #  annotate("text", x = 1.9, y = 1.63,  label = "***", size = 4) +
+ #  annotate("segment", x = 0.7, xend = 3.2, y = 1.6, 
+ #            yend = 1.6, colour = "black", size=.2, alpha=1,) +
+ #  # LL - WL
+ #   annotate("text", x = 2.5, y = 1.53,  label = "***", size = 4) +
+ #   annotate("segment", x = 1.75, xend = 3.2, y = 1.5, 
+ #            yend = 1.5, colour = "black", size=.2, alpha=1,) +
+ #  #WW - LL
+ #   annotate("text", x = 1.45, y = 1.43,  label = "***", size = 4) +
+ #   annotate("segment", x = 0.7, xend = 2.2, y = 1.4, 
+ #            yend = 1.4, colour = "black", size=.2, alpha=1,) +
+  theme(axis.title.x = element_text(size = 9),
+        axis.title.y = element_text(size = 9),
+        plot.title = element_text(size = 10, hjust = 0.5))
+plt_1k_slope
+```
+
+## 7-12 Boxplot
+```{r, message=FALSE, warning=FALSE}
+#cols <- c("#505160", "#68829E", "#AEBD38", "#598234")
+cols <- c("#2E2300", "#6E6702", "#C05805", "#DB9501")
+
+
+plt_1k_slope <- ggplot(dt_sl_7_12, 
+                       aes(x=condicion, y=slope, fill=condicion)) + 
+  stat_boxplot(geom = "errorbar",
+               width = 0.25) + 
+  geom_boxplot(alpha=0.8, outlier.colour=NA, width = 0.4)+
+   scale_fill_manual(values = cols,
+                    limits = c('WW', 'LL', 'WL', 'LW'), 
+                    labels = c('Wide', 'Low', 'Wide-Low', 'Low-Wide'),
+                    guide = guide_none()) + 
+  scale_y_continuous(limits=c(-.5, 1.84)) +
+  scale_x_discrete(limits = c('WW', 'LL', 'WL', 'LW')) +
+  labs(title="7-12 Slopes per condition", y='Slopes', x='Condition')+
  # WW- LW
   annotate("text", x = 2.5, y = 1.83,  label = "***", size = 4) +
   annotate("segment", x = 0.7, xend = 4.2, y = 1.8, 
@@ -341,6 +385,67 @@ plt_1k_slope <- ggplot(dt_sl_1_6,
         plot.title = element_text(size = 10, hjust = 0.5))
 plt_1k_slope
 ```
+## 1-6 Response-Distance with means and std per condition
+
+```{r, warning=FALSE, message=FALSE}
+data_prom <- dt_1_6 %>%
+  group_by(condicion, dist_log) %>%
+  summarise(dist_log,
+            resp_log,
+            prom_log = mean(resp_log), 
+            sd_log = sd(resp_log), 
+            std_log = std.error(resp_log))
+
+ggplot(data_prom,
+       aes(x=dist_log, y=prom_log,
+           color = condicion)) +
+  geom_point() +
+  geom_line(linewidth = 0.8) +
+  scale_color_manual(values = cols,
+                    limits = c('WW', 'LL', 'WL', 'LW'),
+                    labels = c('Wide', 'Low', 'Wide-Low', 'Low-Wide')) +
+  geom_errorbar(aes(ymin=prom_log-std_log,
+                    ymax=prom_log+std_log),
+                width = 0.02) +
+  # facet_grid(rows = vars(ID)) +
+  labs(title = "1-6 Average responses", x='Distance (log scale)', y='responses (log scale)') +
+  theme(axis.title.x = element_text(size = 9),
+        axis.title.y = element_text(size = 9),
+        plot.title = element_text(size = 10, hjust = 0.5))
+```
+## 7-12 Response-Distance with means and std per condition
+
+```{r, warning=FALSE, message=FALSE}
+data_prom <- dt_7_12 %>%
+  group_by(condicion, dist_log) %>%
+  summarise(dist_log,
+            resp_log,
+            prom_log = mean(resp_log), 
+            sd_log = sd(resp_log), 
+            std_log = std.error(resp_log))
+
+ggplot(data_prom,
+       aes(x=dist_log, y=prom_log,
+           color = condicion)) +
+  geom_point() +
+  geom_line(linewidth = 0.8) +
+  scale_color_manual(values = cols,
+                    limits = c('WW', 'LL', 'WL', 'LW'),
+                    labels = c('Wide', 'Low', 'Wide-Low', 'Low-Wide')) +
+  geom_errorbar(aes(ymin=prom_log-std_log,
+                    ymax=prom_log+std_log),
+                width = 0.02) +
+  # facet_grid(rows = vars(ID)) +
+  labs(title = "7-12 Average responses", x='Distance (log scale)', y='responses (log scale)') +
+  theme(axis.title.x = element_text(size = 9),
+        axis.title.y = element_text(size = 9),
+        plot.title = element_text(size = 10, hjust = 0.5))
+```
+
+## Regressions Plot
+
+### 1k Regressions
+
 ```{r echo=FALSE, warning=FALSE, message=FALSE}
 ggplot(dt_1_6 %>% filter(nsub < 15), aes(x=dist_log, y=resp_log, color=condicion)) +
     scale_color_manual(values = cols, labels = c('Wide', 'Low', 'Wide-Low', 'Low-Wide')) +
@@ -388,51 +493,7 @@ ggplot(dt_1_6 %>% filter(nsub > 59 & nsub < 70), aes(x=dist_log, y=resp_log, col
   theme_minimal()
 ```
 
-
-
-## 7-12 Boxplot
-```{r, message=FALSE, warning=FALSE}
-#cols <- c("#505160", "#68829E", "#AEBD38", "#598234")
-cols <- c("#2E2300", "#6E6702", "#C05805", "#DB9501")
-
-
-plt_1k_slope <- ggplot(dt_sl_7_12, 
-                       aes(x=condicion, y=slope, fill=condicion)) + 
-  stat_boxplot(geom = "errorbar",
-               width = 0.25) + 
-  geom_boxplot(alpha=0.8, outlier.colour=NA, width = 0.4)+
-   scale_fill_manual(values = cols,
-                    limits = c('WW', 'LL', 'WL', 'LW'), 
-                    labels = c('Wide', 'Low', 'Wide-Low', 'Low-Wide'),
-                    guide = guide_none()) + 
-  scale_y_continuous(limits=c(-.5, 1.84)) +
-  scale_x_discrete(limits = c('WW', 'LL', 'WL', 'LW')) +
-  labs(title="Slopes per condition", y='Slopes', x='Condition')+
- # WW- LW
-  annotate("text", x = 2.5, y = 1.83,  label = "***", size = 4) +
-  annotate("segment", x = 0.7, xend = 4.2, y = 1.8, 
-            yend = 1.8, colour = "black", size=.2, alpha=1,) +
-  # LL - LW
-  annotate("text", x = 3, y = 1.73,  label = "***", size = 4) +
-  annotate("segment", x = 1.75, xend = 4.2, y = 1.7, 
-            yend = 1.7, colour = "black", size=.2, alpha=1,) +
-  # WW- WL
-  annotate("text", x = 1.9, y = 1.63,  label = "***", size = 4) +
-  annotate("segment", x = 0.7, xend = 3.2, y = 1.6, 
-            yend = 1.6, colour = "black", size=.2, alpha=1,) +
-  # LL - WL
-   annotate("text", x = 2.5, y = 1.53,  label = "***", size = 4) +
-   annotate("segment", x = 1.75, xend = 3.2, y = 1.5, 
-            yend = 1.5, colour = "black", size=.2, alpha=1,) +
-  #WW - LL
-   annotate("text", x = 1.45, y = 1.43,  label = "***", size = 4) +
-   annotate("segment", x = 0.7, xend = 2.2, y = 1.4, 
-            yend = 1.4, colour = "black", size=.2, alpha=1,) +
-  theme(axis.title.x = element_text(size = 9),
-        axis.title.y = element_text(size = 9),
-        plot.title = element_text(size = 10, hjust = 0.5))
-plt_1k_slope
-```
+### 4k Regressions
 
 ```{r echo=FALSE, warning=FALSE, message=FALSE}
 ggplot(dt_7_12 %>% filter(nsub < 15), aes(x=dist_log, y=resp_log, color=condicion)) +
@@ -481,56 +542,6 @@ ggplot(dt_7_12 %>% filter(nsub > 59 & nsub < 70), aes(x=dist_log, y=resp_log, co
   theme_minimal()
 ```
 
-
-### Regressions Plot
-
-```{r echo=FALSE, warning=FALSE, message=FALSE}
-ggplot(dt_1_6 %>% filter(nsub < 15), aes(x=dist_log, y=resp_log, color=condicion)) +
-    scale_color_manual(values = cols, labels = c('Wide', 'Low', 'Wide-Low', 'Low-Wide')) +
-  geom_smooth(method = lm, se = FALSE, size=0.5) +
-  facet_wrap(~nsub) +
-    theme(axis.title.x = element_blank(),
-        axis.title.y = element_text(size = 9),
-        plot.title = element_text(size = 10, hjust = 0.5)) +
-  theme_minimal()
-
-ggplot(dt_1_6 %>% filter(nsub > 15 & nsub < 31), aes(x=dist_log, y=resp_log, color=condicion)) +
-    scale_color_manual(values = cols, labels = c('Wide', 'Low', 'Wide-Low', 'Low-Wide')) +
-  geom_smooth(method = lm, se = FALSE, size=0.5) +
-  facet_wrap(~nsub) +
-    theme(axis.title.x = element_blank(),
-        axis.title.y = element_text(size = 9),
-        plot.title = element_text(size = 10, hjust = 0.5)) +
-  theme_minimal()
-
-ggplot(dt_1_6 %>% filter(nsub > 31 & nsub < 44), aes(x=dist_log, y=resp_log, color=condicion)) +
-    scale_color_manual(values = cols, labels = c('Wide', 'Low', 'Wide-Low', 'Low-Wide')) +
-  geom_smooth(method = lm, se = FALSE, size=0.5) +
-  facet_wrap(~nsub) +
-    theme(axis.title.x = element_blank(),
-        axis.title.y = element_text(size = 9),
-        plot.title = element_text(size = 10, hjust = 0.5)) +
-  theme_minimal()
-
-ggplot(dt_1_6 %>% filter(nsub > 44 & nsub < 59), aes(x=dist_log, y=resp_log, color=condicion)) +
-    scale_color_manual(values = cols, labels = c('Wide', 'Low', 'Wide-Low', 'Low-Wide')) +
-  geom_smooth(method = lm, se = FALSE, size=0.5) +
-  facet_wrap(~nsub) +
-    theme(axis.title.x = element_blank(),
-        axis.title.y = element_text(size = 9),
-        plot.title = element_text(size = 10, hjust = 0.5)) +
-  theme_minimal()
-
-ggplot(dt_1_6 %>% filter(nsub > 59 & nsub < 70), aes(x=dist_log, y=resp_log, color=condicion)) +
-    scale_color_manual(values = cols, labels = c('Wide', 'Low', 'Wide-Low', 'Low-Wide')) +
-  geom_smooth(method = lm, se = FALSE, size=0.5) +
-  facet_wrap(~nsub) +
-    theme(axis.title.x = element_blank(),
-        axis.title.y = element_text(size = 9),
-        plot.title = element_text(size = 10, hjust = 0.5)) +
-  theme_minimal()
-```
-
 ##1-6 One way Anova with reapeated measures
 ```{r 1k_2}
 lmer.1k <- lmer(slope ~ condicion + (1|nsub),
@@ -569,21 +580,4 @@ emmeans(lmer.1k,
         adjust="bonferroni")
 
 qqnorm(resid(lmer.1k))
-```
-
-## MCD a mano
-```{r}
-library(MASS)
-alpha <- .001
-
-output75 <- cov.mcd(x, quantile.used = nrow(x)*.75)
-mhmcd75 <- mahalanobis(x, output75$center, output75$cov)
-cutoff <- (qchisq(p = 1 - alpha, df = ncol(x)))
-names_outlier_MCD75 <- which(mhmcd75 > cutoff)
-excluded_mcd75 <- names_outlier_MCD75
-data_clean_mcd <- x[-excluded_mcd75, ]
-x[excluded_mcd75, ]
-
-
-
 ```
