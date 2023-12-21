@@ -401,6 +401,7 @@ ggplot(data_prom,
            color = condicion)) +
   geom_point() +
   geom_line(linewidth = 0.8) +
+  scale_y_continuous(limits=c(0, 1.45)) +
   scale_color_manual(values = cols,
                     limits = c('WW', 'LL', 'WL', 'LW'),
                     labels = c('Wide', 'Low', 'Wide-Low', 'Low-Wide')) +
@@ -429,6 +430,7 @@ ggplot(data_prom,
            color = condicion)) +
   geom_point() +
   geom_line(linewidth = 0.8) +
+  scale_y_continuous(limits=c(0, 1.45)) +
   scale_color_manual(values = cols,
                     limits = c('WW', 'LL', 'WL', 'LW'),
                     labels = c('Wide', 'Low', 'Wide-Low', 'Low-Wide')) +
