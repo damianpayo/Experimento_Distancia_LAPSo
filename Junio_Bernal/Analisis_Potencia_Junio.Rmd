@@ -322,9 +322,10 @@ plt_1k_slope <- ggplot(data_slopes_clean %>%
                     limits = c('WW', 'LL', 'HH'),
                     labels = c('Wide Band', 'Low Pass', 'High Pass'),
                     guide = guide_none()) +
-  scale_x_discrete(limits = c('WW', 'LL', 'HH')) +
+  scale_x_discrete(limits = c('WW', 'LL', 'HH'),
+                   labels = c('No Filter', 'Low Pass', 'High Pass')) +
   scale_y_continuous(limits=c(0,2)) +
-  labs(title="Cut frequency: 1 kHz", y='Slopes', x='Condition',tag ="A")+
+  labs(title="Cutoff Frequency: 1kHz", y='Slopes', x='Condition',tag ="A")+
   annotate("text", x = 1.5, y = 1.6,  label = "***", size = 4) +
   annotate("segment", x = 0.7, xend = 2.2, y = 1.55, 
            yend = 1.55, colour = "black", size=.3, alpha=1,) +
@@ -332,13 +333,13 @@ plt_1k_slope <- ggplot(data_slopes_clean %>%
   annotate("segment", x = 1.75, xend = 3.2, y = 1.75, 
            yend = 1.75, colour = "black", size=.3, alpha=1,) +
   theme_light()+
-  theme(axis.title.x = element_text(size = 11),
-        axis.title.y = element_text(size = 11),
-        plot.title = element_text(size = 14, hjust = 0.5))
+  theme(axis.title.x = element_text(size = 14),
+        axis.title.y = element_text(size = 14),
+        plot.title = element_text(size = 15, hjust = 0.5))
 
 
 plt_4k_slope <- ggplot(data_slopes_clean %>% 
-                         filter(freq=="4k" & slope < 1.6), 
+                         filter(freq=="4k"), #& slope < 1.6), 
                        aes(x=condicion, y=slope, fill=condicion)) + 
   stat_boxplot(geom = "errorbar",
                width = 0.25) + 
@@ -347,9 +348,10 @@ plt_4k_slope <- ggplot(data_slopes_clean %>%
                     limits = c('WW', 'LL', 'HH'),
                     labels = c('Wide Band', 'Low Pass', 'High Pass'),
                     guide = guide_none()) +
-  scale_x_discrete(limits = c('WW', 'LL', 'HH')) +
+  scale_x_discrete(limits = c('WW', 'LL', 'HH'),
+                   labels = c('No Filter', 'Low Pass', 'High Pass')) +
   scale_y_continuous(limits=c(0,2)) +
-  labs(title="Cut frequency: 4 kHz", y = '', x='Condition', tag ="B")+
+  labs(title="Cutoff Frequency: 4kHz", y = '', x='Condition', tag ="B")+
   annotate("text", x = 1.5, y = 1.6,  label = "*", size = 4) +
   annotate("segment", x = 0.7, xend = 2.2, y = 1.55, 
            yend = 1.55, colour = "black", size=.3, alpha=1,) +
@@ -357,14 +359,15 @@ plt_4k_slope <- ggplot(data_slopes_clean %>%
   annotate("segment", x = 1.75, xend = 3.2, y = 1.75, 
            yend = 1.75, colour = "black", size=.3, alpha=1,) +
   theme_light()+
-  theme(axis.title.x = element_text(size=11),
-        axis.title.y = element_text(size=11),
-        plot.title = element_text(size = 14, hjust = 0.5))
+  theme(axis.title.x = element_text(size=14),
+        axis.title.y = element_text(size=14),
+        plot.title = element_text(size = 15, hjust = 0.5))
 
 ggarrange(plt_1k_slope,plt_4k_slope, common.legend = TRUE)
 ggsave(plot = last_plot(),
-  file = "boxplot_junio.png",
-  width = 3000,
+  file = "boxplot_1k4k.eps",
+  device = cairo_ps,
+  width = 3500,
   height = 2000,
   unit = "px",
   dpi = 300)
@@ -416,17 +419,17 @@ dist_curves_1k <- ggplot(data_prom,
                      limits=c(-0.2,1.367))+
   scale_color_manual(values = cols,
                     limits = c('WW', 'LL', 'HH'),
-                    labels = c('Wide', 'Low', 'High')) +
+                    labels = c('No Filter', 'Low Pass', 'High Pass')) +
   geom_errorbar(aes(ymin=prom_log-std_log,
                     ymax=prom_log+std_log),
                 width = 0.02,alpha = 0.8) +
   # facet_grid(rows = vars(ID)) +
-  labs(title = "Cut Frequency: 1kHz", x='Distance (log scale)', y='Responses (log scale)',
+  labs(title = "Cutoff Frequency: 1kHz", x='Distance (log scale)', y='Responses (log scale)',
        color ="Condition", tag="A") +
   theme_light()+
   theme(axis.title.x = element_text(size = 11),
         axis.title.y = element_text(size = 11),
-        plot.title = element_text(size = 14, hjust = 0.5))
+        plot.title = element_text(size = 12, hjust = 0.5))
 
 dist_curves_1k
 ```
@@ -456,23 +459,24 @@ dist_curves_4k <- ggplot(data_prom,
                      limits=c(-0.2,1.367))+
   scale_color_manual(values = cols,
                     limits = c('WW', 'LL', 'HH'),
-                    labels = c('Wide', 'Low', 'High')) +
+                    labels = c('No Filter', 'Low Pass', 'High Pass')) +
   geom_errorbar(aes(ymin=prom_log-std_log,
                     ymax=prom_log+std_log),
                 width = 0.02,alpha = 0.8) +
   # facet_grid(rows = vars(ID)) +
-  labs(title = "Cut Frequency: 4kHz", x='Distance (log scale)', y="",
+  labs(title = "Cutoff Frequency: 4kHz", x='Distance (log scale)', y="",
        color ="Condition", tag="B") +
   theme_light()+
   theme(axis.title.x = element_text(size = 11),
         axis.title.y = element_text(size = 11),
-        plot.title = element_text(size = 14, hjust = 0.5))
+        plot.title = element_text(size = 12, hjust = 0.5))
 
 ggarrange(dist_curves_1k,dist_curves_4k, common.legend = TRUE,legend="bottom")
 ggsave(plot = last_plot(),
-  file = "plt_dist_curves_1kvs4k.png",
-  width = 4000,
-  height = 2000,
+  file = "plt_dist_curves_1kvs4k.eps",
+  device = cairo_ps,
+  width = 3500,
+  height = 1750,
   unit = "px",
   dpi = 300)
 ```
@@ -490,7 +494,7 @@ This analysis allows to evaluate the variation of slopes between intrasubject co
 ```{r 1k_2}
 lmer.1k <- lmer(slope ~ condicion + (1|nsub),
     data = data_slopes_clean %>% filter(freq=="1k"))
-summary(lmer.1k)
+summary(lmer.1k)m
 
 anova(lmer.1k)
 

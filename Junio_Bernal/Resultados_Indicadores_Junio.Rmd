@@ -215,11 +215,14 @@ SC <- ggplot(Indicadores,
   scale_color_manual(values = cols,
                     limits = c('wide', 'low', 'high'),
                     labels = c('Wide', 'Low', 'High')) +
-  labs(title = "Spectral Centroid", x='Distance (m)', y='Frecuency (Hz)') +
+  labs(title = "Spectral Centroid", x='Distance (m)', y='Frecuency (Hz)', 
+       linetype = 'Cutoff Frequency') +
   theme_light()+
-  theme(axis.title.x = element_text(size = 11),
-        axis.title.y = element_text(size = 11),
-        plot.title = element_text(size = 14, hjust = 0.5))
+  theme(axis.title.x = element_text(size = 11), 
+        axis.title.y = element_text(size = 11), 
+        axis.text.x = element_text(size = 11),
+        axis.text.y = element_text(size = 11),
+        plot.title = element_text(size = 12, hjust = 0.5))
 
 
 DRR <- ggplot(Indicadores,
@@ -232,13 +235,16 @@ DRR <- ggplot(Indicadores,
   scale_color_manual(values = cols,
                     limits = c('wide', 'low', 'high'),
                     labels = c('Wide', 'Low', 'High')) +
-  labs(title = "DR Ratio", x='Distance (m)', y='Intensity (dB)') +
+  labs(title = "DR Ratio", x='Distance (m)', y='Intensity (dB)',
+       linetype = 'Cutoff Frequency') +
   theme_light()+
   theme(axis.title.x = element_text(size = 11),
         axis.title.y = element_text(size = 11),
-        plot.title = element_text(size = 14, hjust = 0.5))
+        axis.text.x = element_text(size = 11),
+        axis.text.y = element_text(size = 11),
+        plot.title = element_text(size = 12, hjust = 0.5))
 
-IB <- ggplot(Indicadores,
+BL <- ggplot(Indicadores,
              aes(x=Distance, y=Intensidad_Binaural,
                  color = Condition, linetype = Frequency)) +
   geom_point() +
@@ -247,15 +253,19 @@ IB <- ggplot(Indicadores,
   scale_color_manual(values = cols,
                     limits = c('wide', 'low', 'high'),
                     labels = c('Wide', 'Low', 'High')) +
-  labs(title = "Binaural Intensity", x='Distance (m)', y='Intensity (dB)') +
+  labs(title = "Binaural Level", x='Distance (m)', y='Intensity (dBFS)',
+       linetype = 'Cutoff Frequency') +
   theme_light()+
   theme(axis.title.x = element_text(size = 11),
         axis.title.y = element_text(size = 11),
-        plot.title = element_text(size = 14, hjust = 0.5))
-
-VE <- ggplot(Indicadores,
+        axis.text.x = element_text(size = 11),
+        axis.text.y = element_text(size = 11),
+        plot.title = element_text(size = 12, hjust = 0.5))
+## INDIVIDUAL LEGENDS ####################################
+VE_1 <- ggplot(Indicadores,
              aes(x=Distance, y=Varianza_Espectral,
-                 color = Condition, linetype = Frequency)) +
+                 color = Condition#, linetype = Frequency
+                 )) +
   geom_point() +
   geom_line(linewidth = 0.5, alpha = 0.8) +
   scale_x_log10(breaks=c(1.5,2,2.5,3.3,4.3,5.6,7.2,9.4,12,15.5,20,26))+
@@ -266,16 +276,47 @@ VE <- ggplot(Indicadores,
   theme_light()+
   theme(axis.title.x = element_text(size = 11),
         axis.title.y = element_text(size = 11),
-        plot.title = element_text(size = 14, hjust = 0.5))
+        plot.title = element_text(size = 12, hjust = 0.5),
+        legend.text = element_text(size=12),
+        legend.title = element_text(size=12)
+        )
 
-plot <- ggpubr::ggarrange(IB, DRR, SC, VE, common.legend = TRUE, legend="bottom")
+VE_2 <- ggplot(Indicadores,
+             aes(x=Distance, y=Varianza_Espectral,
+                 linetype = Frequency
+                 )) +
+  geom_point() +
+  geom_line(linewidth = 0.5, alpha = 0.8) +
+  scale_x_log10(breaks=c(1.5,2,2.5,3.3,4.3,5.6,7.2,9.4,12,15.5,20,26))+
+  scale_color_manual(values = cols,
+                    limits = c('wide', 'low', 'high'),
+                    labels = c('Wide', 'Low', 'High')) +
+  labs(title = "Spectral Variance", x='Distance (m)', y='Cutoff Frecuency (Hz)') +
+  theme_light()+
+  theme(axis.title.x = element_text(size = 11),
+        axis.title.y = element_text(size = 11),
+        plot.title = element_text(size = 12, hjust = 0.5),
+        legend.text = element_text(size=12),
+        legend.title = element_text(size=12)
+        )
+#########################
+
+comleg_condition <- as_ggplot(get_legend(VE_1, position = "right"))+
+  theme(plot.margin = margin(0,0,0,3, "cm"))
+comleg_cutoff <- as_ggplot(get_legend(VE_2, position = "left"))+
+  theme(plot.margin = margin(0,3,0,0, "cm"))
+
+legends <- ggpubr::ggarrange(comleg_condition, comleg_cutoff)
+plot <- ggpubr::ggarrange(BL, DRR, SC, legends,
+                          common.legend = TRUE, legend = "none")
 
 annotate_figure(plot, top = text_grob("Acoustic Indexes", 
                 face = "bold", size = 14))
-ggsave(plot = last_plot(),
-  file = "Indicadores_1kvs4k.png",
-  width = 4000,
-  height = 2000,
+ggsave(plot,
+  file = "Indicadores_1kvs4k.eps",
+  device = cairo_ps,
+  width = 3500,
+  height = 1750,
   unit = "px",
   dpi = 300)
 ```
