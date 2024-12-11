@@ -121,9 +121,7 @@ data_1k_DR$resp_log <- log10(data_1k_DR$respuesta)
 
 We applied the *Minimum Covariance Determinant* criteria to detect multivariate outliers.
 
-Before that, we eliminate 3 subjects due to the responses being incomplete.
-
-We eliminated 1959 observations from the total of 9915 with this method.
+We eliminated 738 observations from the total of 9375 with this method.
 
 ```{r, echo=FALSE, warning=FALSE}
 data_clean <- tibble()
@@ -199,7 +197,7 @@ qqline(sresids)
 
 We performed an analysis of the normality of the intrasubject residuals with the Shapiro.Wilk method. The study compares subjects (nsubs) according to condition, reporting which ones do not allow us to approve the Null Hypothesis (H0) that residuals come from a normal distribution. 
 
-Of all the subjects and conditions evaluated, only 5 do not present a normal distribution in the residuals (6-LW, 13-LW, 19-LL, 22-WL and 39-LW).
+Of all the subjects and conditions evaluated, 16 do not present a normal distribution in the residuals (1-LL, 3-LL, 8-LL, 12-LL, 13-LW, 18-LL, 19-LL, 22-WL, 28-LL, 30-LL, 33-WL, 34-LL, 34-WL, 36-LL, 61-WW, 67-LL, 67-WL).
 
 ```{r, warning=FALSE, message=FALSE}
 normality_test <- data_clean %>%
@@ -299,7 +297,8 @@ We plotted in a boxplot the total slopes per condition, noting the degree of sig
 ```{r, message=FALSE, warning=FALSE}
 #cols <- c("#505160", "#68829E", "#AEBD38", "#598234")
 #cols <- c("#2E2300", "#6E6702", "#C05805", "#DB9501")
-cols <- c("#00AF55", "#EF0000", "#EE8E20","#DDDD00")
+#cols <- c("#00AF55", "#EF0000", "#EE8E20","#DDDD00")
+cols <- c("#00AF55", "#EF0000", "#DB9501","#890070")
 
 
 plt_exp2_slope <- ggplot(data_slopes_clean, 
@@ -309,12 +308,12 @@ plt_exp2_slope <- ggplot(data_slopes_clean,
   geom_boxplot(alpha=0.8, outlier.colour=NA, width = 0.4)+
    scale_fill_manual(values = cols,
                     limits = c('WW', 'LL', 'WL', 'LW'), 
-                    labels = c('No Filter', 'Low Pass', 'No Filter|Low Pass', 'Low Pass|No Filter'),
+                    labels = c('Wide', 'Low', 'Wide-Low', 'Low-Wide'),
                     guide = guide_none()
                     ) + 
   scale_y_continuous(limits=c(0, 2.20)) +
   scale_x_discrete(limits = c('WW', 'LL', 'WL', 'LW'),
-                   labels = c('No Filter', 'Low Pass', 'No Filter|Low Pass', 'Low Pass|No Filter')
+                   labels = c('Wide', 'Low', 'Wide-Low', 'Low-Wide')
                    ) +
   labs(title="Slopes per condition", y='Slopes', x='Condition')+
  # WW- LW
@@ -338,20 +337,27 @@ plt_exp2_slope <- ggplot(data_slopes_clean,
    annotate("segment", x = 0.7, xend = 2.2, y = 1.76, 
             yend = 1.76, colour = "black", size=.2, alpha=1,) +
   theme_light()+
-  theme(axis.title.x = element_text(size = 14),
-        axis.title.y = element_text(size = 14),
-        plot.title = element_text(size = 15, hjust = 0.5))
+  theme(axis.title.x = element_text(size = 15),
+        axis.text.x = element_text(size = 14),
+        axis.title.y = element_text(size = 15),
+        axis.text.y = element_text(size = 12),
+        plot.title = element_text(size = 16, hjust = 0.5))
 plt_exp2_slope
 
 ggsave(plot = last_plot(),
-  file = "boxplot_exp2.png",
-  #device = cairo_ps,
+  file = "boxplot_exp2.eps",
+  device = cairo_ps,
   width = 2500,
   height = 2000,
   unit = "px",
   dpi = 300)
 ```
+```{r}
 
+
+ggplot(data_1k_DR%>%filter(distancia<=5.0), aes(x=as.factor(distancia),y=resp_log, color=condicion))+
+  geom_jitter()
+```
 ### Regressions Plot
 
 ```{r echo=FALSE, warning=FALSE, message=FALSE}
@@ -404,6 +410,7 @@ ggplot(data_clean %>% filter(nsub > 59 & nsub < 70), aes(x=dist_log, y=resp_log,
 ### data_prom tibble with means and std per condition
 
 ```{r, warning=FALSE, message=FALSE}
+cols <- c("#00AF55", "#EF0000", "#DB9501","#890070")
 data_prom <- data_clean %>%
   group_by(condicion, dist_log) %>%
   summarise(dist_log,
@@ -420,26 +427,32 @@ ggplot(data_prom,
   scale_x_continuous(breaks=log10(c(1.5,2,2.5,3.3,4.3,5.6,7.2,9.4,12,15.5,20,26)),
                      labels=c(1.5,2,2.5,3.3,4.3,5.6,7.2,9.4,12,15.5,20,26))+
   scale_y_continuous(breaks=log10(c(0.7,1,1.5,2,2.5,3.3,4.3,5.6,7.2,9.4,12,15.5,20,26)),
-                     labels=c(0.7,1,1.5,2,2.5,3.3,4.3,5.6,7.2,9.4,12,15.5,20,26),
-                     limits=c(-0.2,1.367))+
+                     labels=c(0.7,1,1.5,2,2.5,3.3,4.3,5.6,7.2,9.4,12,15.5,20,26)
+                     #limits=c(-0.2,1.367)
+                     )+
+  coord_cartesian(ylim = c(-0.2,1.367)) + 
   scale_color_manual(values = cols,
                     limits = c('WW', 'LL', 'WL', 'LW'),
-                    labels = c('No Filter', 'Low Pass', 'No Filter|Low Pass', 'Low Pass|No Filter')
+                    labels = c('Wide', 'Low', 'Wide-Low', 'Low-Wide'),
                     ) +
   geom_errorbar(aes(ymin=prom_log-std_log,
                     ymax=prom_log+std_log),
                 width = 0.02,alpha = 0.8) +
+
   # facet_grid(rows = vars(ID)) +
   labs(title = "Average Responses", x='Distance (log scale)', y='Responses (log scale)', color ="Condition") +
   theme_light()+
   theme(axis.title.x = element_text(size = 14),
         axis.title.y = element_text(size = 14),
-        plot.title = element_text(size = 15, hjust = 0.5))
-
+        plot.title = element_text(size = 15, hjust = 0.5),
+        legend.position = "bottom"
+        #legend.background = element_blank(),
+        #legend.box.background = element_rect(colour = "black")
+        )
 ggsave(plot = last_plot(),
   file = "plt_dist_curves_exp2.png",
   #device = cairo_ps,
-  width = 3500,
+  width = 1750,
   height = 1750,
   unit = "px",
   dpi = 300)

@@ -197,7 +197,7 @@ qqline(sresids)
 
 We performed an analysis of the normality of the intrasubject residuals with the Shapiro.Wilk method. The study compares subjects (nsubs) according to condition, reporting which ones do not allow us to approve the Null Hypothesis (H0) that residuals come from a normal distribution. 
 
-Of all the subjects and conditions evaluated, only 4 do not present a normal distribution in the residuals (4-Wide, 12-Low, 16-Wide and 19-High).
+Of all the subjects and conditions evaluated, only 5 do not present a normal distribution in the residuals (18-Low, 23-Low, 31-Wide, 40-High and 51-Wide).
 
 ```{r Residuos intra-sujeto, warning=FALSE, message=FALSE}
 normality_test <- data_clean %>%
@@ -320,10 +320,10 @@ plt_1k_slope <- ggplot(data_slopes_clean %>%
   geom_boxplot(alpha=0.8, outlier.colour=NA, width = 0.4)+
   scale_fill_manual(values = cols,
                     limits = c('WW', 'LL', 'HH'),
-                    labels = c('Wide Band', 'Low Pass', 'High Pass'),
+                    labels = c('Wide', 'Low', 'High'),
                     guide = guide_none()) +
   scale_x_discrete(limits = c('WW', 'LL', 'HH'),
-                   labels = c('No Filter', 'Low Pass', 'High Pass')) +
+                   labels = c('Wide', 'Low', 'High')) +
   scale_y_continuous(limits=c(0,2)) +
   labs(title="Cutoff Frequency: 1kHz", y='Slopes', x='Condition',tag ="A")+
   annotate("text", x = 1.5, y = 1.6,  label = "***", size = 4) +
@@ -333,9 +333,11 @@ plt_1k_slope <- ggplot(data_slopes_clean %>%
   annotate("segment", x = 1.75, xend = 3.2, y = 1.75, 
            yend = 1.75, colour = "black", size=.3, alpha=1,) +
   theme_light()+
-  theme(axis.title.x = element_text(size = 14),
-        axis.title.y = element_text(size = 14),
-        plot.title = element_text(size = 15, hjust = 0.5))
+  theme(axis.title.x = element_text(size = 15),
+        axis.text.x = element_text(size = 14),
+        axis.title.y = element_text(size = 15),
+        axis.text.y = element_text(size = 12),
+        plot.title = element_text(size = 16, hjust = 0.5))
 
 
 plt_4k_slope <- ggplot(data_slopes_clean %>% 
@@ -346,10 +348,10 @@ plt_4k_slope <- ggplot(data_slopes_clean %>%
   geom_boxplot(alpha = 0.8, outlier.colour=NA, width = 0.4) +
   scale_fill_manual(values = cols,
                     limits = c('WW', 'LL', 'HH'),
-                    labels = c('Wide Band', 'Low Pass', 'High Pass'),
+                    labels = c('Wide', 'Low', 'High'),
                     guide = guide_none()) +
   scale_x_discrete(limits = c('WW', 'LL', 'HH'),
-                   labels = c('No Filter', 'Low Pass', 'High Pass')) +
+                   labels = c('Wide', 'Low', 'High')) +
   scale_y_continuous(limits=c(0,2)) +
   labs(title="Cutoff Frequency: 4kHz", y = '', x='Condition', tag ="B")+
   annotate("text", x = 1.5, y = 1.6,  label = "*", size = 4) +
@@ -359,14 +361,16 @@ plt_4k_slope <- ggplot(data_slopes_clean %>%
   annotate("segment", x = 1.75, xend = 3.2, y = 1.75, 
            yend = 1.75, colour = "black", size=.3, alpha=1,) +
   theme_light()+
-  theme(axis.title.x = element_text(size=14),
-        axis.title.y = element_text(size=14),
-        plot.title = element_text(size = 15, hjust = 0.5))
+  theme(axis.title.x = element_text(size = 15),
+        axis.text.x = element_text(size = 14),
+        axis.title.y = element_text(size = 15),
+        axis.text.y = element_text(size = 12),
+        plot.title = element_text(size = 16, hjust = 0.5))
 
 ggarrange(plt_1k_slope,plt_4k_slope, common.legend = TRUE)
 ggsave(plot = last_plot(),
-  file = "boxplot_1k4k.eps",
-  device = cairo_ps,
+  file = "boxplot_1k4k.png",
+  #device = cairo_ps,
   width = 3500,
   height = 2000,
   unit = "px",
@@ -419,7 +423,7 @@ dist_curves_1k <- ggplot(data_prom,
                      limits=c(-0.2,1.367))+
   scale_color_manual(values = cols,
                     limits = c('WW', 'LL', 'HH'),
-                    labels = c('No Filter', 'Low Pass', 'High Pass')) +
+                    labels = c('Wide', 'Low', 'High')) +
   geom_errorbar(aes(ymin=prom_log-std_log,
                     ymax=prom_log+std_log),
                 width = 0.02,alpha = 0.8) +
@@ -459,7 +463,7 @@ dist_curves_4k <- ggplot(data_prom,
                      limits=c(-0.2,1.367))+
   scale_color_manual(values = cols,
                     limits = c('WW', 'LL', 'HH'),
-                    labels = c('No Filter', 'Low Pass', 'High Pass')) +
+                    labels = c('Wide', 'Low', 'High')) +
   geom_errorbar(aes(ymin=prom_log-std_log,
                     ymax=prom_log+std_log),
                 width = 0.02,alpha = 0.8) +

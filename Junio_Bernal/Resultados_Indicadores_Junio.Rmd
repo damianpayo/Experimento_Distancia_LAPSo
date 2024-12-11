@@ -121,14 +121,14 @@ Indicadores$dist_log <- log10(Indicadores$Distancia)
 
 ## Graficamos
 
-### Individuales
+### (OLD) Individuales
 ```{r}
 
 cols <- c("#00AF55", "#EF0000", "#2200DF")
 
 SC <- ggplot(Indicadores,
-             aes(x=Distancia, y=Centroide_Espectral,
-                 color = Condicion)) +
+             aes(x=Distance, y=Centroide_Espectral,
+                 color = Condition)) +
   geom_point() +
   geom_line(linewidth = 0.5, alpha = 0.8) +
   scale_x_log10(breaks=c(1.5,2,2.5,3.3,4.3,5.6,7.2,9.4,12,15.5,20,26))+
@@ -143,8 +143,8 @@ SC <- ggplot(Indicadores,
 
 
 DRR <- ggplot(Indicadores,
-             aes(x=Distancia, y=DR_Ratio,
-                 color = Condicion)) +
+             aes(x=Distance, y=DR_Ratio,
+                 color = Condition)) +
   geom_point() +
   scale_x_log10()+
   geom_line(linewidth = 0.5, alpha = 0.8) +
@@ -159,8 +159,8 @@ DRR <- ggplot(Indicadores,
         plot.title = element_text(size = 10, hjust = 0.5))
 
 IB <- ggplot(Indicadores,
-             aes(x=Distancia, y=Intensidad_Binaural,
-                 color = Condicion)) +
+             aes(x=Distance, y=Intensidad_Binaural,
+                 color = Condition)) +
   geom_point() +
   geom_line(linewidth = 0.5, alpha = 0.8) +
   scale_x_log10(breaks=c(1.5,2,2.5,3.3,4.3,5.6,7.2,9.4,12,15.5,20,26))+
@@ -174,8 +174,8 @@ IB <- ggplot(Indicadores,
         plot.title = element_text(size = 10, hjust = 0.5))
 
 VE <- ggplot(Indicadores,
-             aes(x=Distancia, y=Varianza_Espectral,
-                 color = Condicion)) +
+             aes(x=Distance, y=Varianza_Espectral,
+                 color = Condition)) +
   geom_point() +
   geom_line(linewidth = 0.5, alpha = 0.8) +
   scale_x_log10(breaks=c(1.5,2,2.5,3.3,4.3,5.6,7.2,9.4,12,15.5,20,26))+
@@ -215,7 +215,8 @@ SC <- ggplot(Indicadores,
   scale_color_manual(values = cols,
                     limits = c('wide', 'low', 'high'),
                     labels = c('Wide', 'Low', 'High')) +
-  labs(title = "Spectral Centroid", x='Distance (m)', y='Frecuency (Hz)', 
+  labs(title = "Spectral Centroid", x='Distance (m)', y='Frecuency (Hz)',
+       tag = "C",
        linetype = 'Cutoff Frequency') +
   theme_light()+
   theme(axis.title.x = element_text(size = 11), 
@@ -236,6 +237,7 @@ DRR <- ggplot(Indicadores,
                     limits = c('wide', 'low', 'high'),
                     labels = c('Wide', 'Low', 'High')) +
   labs(title = "DR Ratio", x='Distance (m)', y='Intensity (dB)',
+       tag = "B",
        linetype = 'Cutoff Frequency') +
   theme_light()+
   theme(axis.title.x = element_text(size = 11),
@@ -254,6 +256,7 @@ BL <- ggplot(Indicadores,
                     limits = c('wide', 'low', 'high'),
                     labels = c('Wide', 'Low', 'High')) +
   labs(title = "Binaural Level", x='Distance (m)', y='Intensity (dBFS)',
+       tag = "A",
        linetype = 'Cutoff Frequency') +
   theme_light()+
   theme(axis.title.x = element_text(size = 11),
@@ -279,6 +282,8 @@ VE_1 <- ggplot(Indicadores,
         plot.title = element_text(size = 12, hjust = 0.5),
         legend.text = element_text(size=12),
         legend.title = element_text(size=12)
+        #legend.background = element_blank(),
+        #legend.box.background = element_rect(colour = "black")
         )
 
 VE_2 <- ggplot(Indicadores,
@@ -307,6 +312,7 @@ comleg_cutoff <- as_ggplot(get_legend(VE_2, position = "left"))+
   theme(plot.margin = margin(0,3,0,0, "cm"))
 
 legends <- ggpubr::ggarrange(comleg_condition, comleg_cutoff)
+            
 plot <- ggpubr::ggarrange(BL, DRR, SC, legends,
                           common.legend = TRUE, legend = "none")
 

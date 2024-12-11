@@ -101,7 +101,8 @@ SC <- ggplot(Indicadores,
   scale_color_manual(values = cols,
                     limits = c('wide', 'low', 'wide-low', 'low-wide'),
                     labels = c('Wide', 'Low', 'Wide-Low', 'Low-Wide')) +
-  labs(title = "Spectral Centroid", x='Distance (m)', y='Frecuency (Hz)', 
+  labs(title = "Spectral Centroid", x='Distance (m)', y='Frecuency (Hz)',
+       tag="C",
        linetype = 'Cutoff Frequency') +
   theme_light()+
   theme(axis.title.x = element_text(size = 11), 
@@ -122,6 +123,7 @@ DRR <- ggplot(Indicadores,
                     limits = c('wide', 'low', 'wide-low', 'low-wide'),
                     labels = c('Wide', 'Low', 'Wide-Low', 'Low-Wide')) +
   labs(title = "DR Ratio", x='Distance (m)', y='Intensity (dB)',
+       tag="B",
        linetype = 'Cutoff Frequency') +
   theme_light()+
   theme(axis.title.x = element_text(size = 11),
@@ -140,6 +142,7 @@ BL <- ggplot(Indicadores,
                     limits = c('wide', 'low', 'wide-low', 'low-wide'),
                     labels = c('Wide', 'Low', 'Wide-Low', 'Low-Wide')) +
   labs(title = "Binaural Level", x='Distance (m)', y='Intensity (dBFS)',
+       tag="A",
        linetype = 'Cutoff Frequency') +
   theme_light()+
   theme(axis.title.x = element_text(size = 11),
@@ -166,7 +169,9 @@ VE_1 <- ggplot(Indicadores,
         axis.title.y = element_text(size = 11),
         plot.title = element_text(size = 12, hjust = 0.5),
         legend.text = element_text(size=12),
-        legend.title = element_text(size=12)
+        legend.title = element_text(size=12),
+        legend.background = element_blank(),
+        legend.box.background = element_rect(colour = "black")
         )
 #########################
 
