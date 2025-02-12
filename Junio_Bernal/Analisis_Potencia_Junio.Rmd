@@ -498,7 +498,7 @@ This analysis allows to evaluate the variation of slopes between intrasubject co
 ```{r 1k_2}
 lmer.1k <- lmer(slope ~ condicion + (1|nsub),
     data = data_slopes_clean %>% filter(freq=="1k"))
-summary(lmer.1k)m
+summary(lmer.1k)
 
 anova(lmer.1k)
 

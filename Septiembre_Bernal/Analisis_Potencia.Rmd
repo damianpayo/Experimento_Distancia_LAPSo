@@ -38,7 +38,7 @@ library(nortest)
 
 ## Abstract
 
-Present the analysis of results obtained from PAD experiment in September 2023 in two locations: first, in a small room named "Gessel Camera" at the Catholic University of Salta (28 subjects) and, secondly, in room 27 of the National University of Quilmes (41 subjetcs).
+Present the analysis of results obtained from PAD experiment in September 2023 in two locations: first, in a small room named "Gessel Camera" at the Catholic University of Salta (28 subjects) and, secondly, in room 27 of the National University of Quilmes (41 subjetcs). 
 
 The experiment it realize with 69 subjects (36 males, 31 females, and 1 non-binary) with ages ranging from 18 to 45 years (mean = 27.5, standard deviation = 7.31). 
 
